@@ -195,10 +195,10 @@ jobs:
       - name: Ensure deployment directory on EC2
         uses: appleboy/ssh-action@v1.2.0
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          port: ${{ secrets.EC2_PORT || 22 }}
+          host: ${{ secrets.EC2_HOST || secrets.SSH_HOST }}
+          username: ${{ secrets.EC2_USER || secrets.SSH_USER || 'ubuntu' }}
+          key: ${{ secrets.EC2_SSH_KEY || secrets.SSH_KEY }}
+          port: ${{ secrets.EC2_PORT || secrets.SSH_PORT || 22 }}
           timeout: 30s
           command_timeout: 5m
           script: |
@@ -207,10 +207,10 @@ jobs:
       - name: Upload compose configuration
         uses: appleboy/scp-action@v1.0.0
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          port: ${{ secrets.EC2_PORT || 22 }}
+          host: ${{ secrets.EC2_HOST || secrets.SSH_HOST }}
+          username: ${{ secrets.EC2_USER || secrets.SSH_USER || 'ubuntu' }}
+          key: ${{ secrets.EC2_SSH_KEY || secrets.SSH_KEY }}
+          port: ${{ secrets.EC2_PORT || secrets.SSH_PORT || 22 }}
           timeout: 30s
           command_timeout: 5m
           source: "docker-compose.prod.yml"
@@ -225,10 +225,10 @@ jobs:
           AWS_REGION: ${{ secrets.AWS_REGION }}
           TAG: latest
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          port: ${{ secrets.EC2_PORT || 22 }}
+          host: ${{ secrets.EC2_HOST || secrets.SSH_HOST }}
+          username: ${{ secrets.EC2_USER || secrets.SSH_USER || 'ubuntu' }}
+          key: ${{ secrets.EC2_SSH_KEY || secrets.SSH_KEY }}
+          port: ${{ secrets.EC2_PORT || secrets.SSH_PORT || 22 }}
           timeout: 30s
           command_timeout: 10m
           envs: ECR_TOKEN,ECR_BACKEND_IMAGE,ECR_FRONTEND_IMAGE,AWS_REGION,TAG
