@@ -1,149 +1,347 @@
-name: Build Checks & Deploy to EC2
+# ==============================================================================
+# Deploy Mexpo to EC2 (Docker + Amazon ECR)
+#
+# Monorepo architecture:
+#   - dev-backend-mexpo-new: NestJS 11 + Prisma 7 + PostgreSQL (Hybrid DB Adapter) + MinIO / S3
+#   - dev-frontend-mexpo-new: Next.js 16 + React 19 + Tailwind CSS v4 + TanStack Query
+#
+# On push to `main`:
+#   1. CI Validation: Compile & TypeCheck backend (NestJS + Prisma) and frontend (Next.js build).
+#   2. Docker Build & Push: Build both backend & frontend container images and push to Amazon ECR.
+#   3. EC2 Deployment: SSH to host, synchronize docker-compose.prod.yml & runtime .env,
+#      authenticate against ECR using short-lived credentials, pull and restart stack.
+#
+# Required GitHub Actions Secrets:
+#   AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY   — IAM credentials with ECR push & auth permissions
+#   AWS_REGION                                   — e.g. us-east-1, ap-southeast-1
+#   ECR_BACKEND_IMAGE                            — Backend ECR Repository URI (e.g. 123456.dkr.ecr.region.amazonaws.com/mexpo-backend)
+#   ECR_FRONTEND_IMAGE                           — Frontend ECR Repository URI (e.g. 123456.dkr.ecr.region.amazonaws.com/mexpo-frontend)
+#   EC2_HOST / EC2_USER / EC2_SSH_KEY            — Target EC2 instance SSH configuration
+#
+# Application Secrets / Environment Variables:
+#   DB_PROVIDER, DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, DB_SSLMODE — Database config
+#   JWT_SECRET                                   — JWT authentication secret
+#   BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD     — Basic auth credentials for protected/report endpoints
+#   PUBLIC_FRONTEND_URL, API_BASE_URL            — Backend CORS & routing URLs
+#   MAIL_HOST, MAIL_PORT, MAIL_SECURE, MAIL_USER, MAIL_PASSWORD, CONTACT_DESTINATION_EMAIL — SMTP
+#   MINIO_ROOT_USER, MINIO_ROOT_PASSWORD, MINIO_PORT, MINIO_CONSOLE_PORT — MinIO credentials
+#   MINIO_ENDPOINT, MINIO_ENDPOINT_UPLOAD, MINIO_ACCESS_KEY, MINIO_SECRET_KEY, MINIO_BUCKET — Storage
+#   MIDTRANS_SERVER_KEY, MIDTRANS_CLIENT_KEY, MIDTRANS_IS_PRODUCTION — Midtrans Payment Gateway
+#   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET       — Google OAuth credentials
+#   MEXPO_INTEGRATION_API_KEY, MEXPO_WEBHOOK_SECRET — Partner Integration API credentials
+#   NEXT_PUBLIC_BASE_URL_PRODUCTION, NEXT_PUBLIC_BASE_URL_DEVELOPMENT — Frontend API URLs
+#   NEXT_PUBLIC_TOKEN_KEY                        — Cookie token key
+# ==============================================================================
+
+name: Deploy Mexpo to EC2
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: mexpo-deploy
+  cancel-in-progress: false
 
 permissions:
   contents: read
 
 jobs:
-  # ============================================================
-  # 1. Backend Build & Type Check
-  # ============================================================
-  check-backend:
-    name: Check Backend (NestJS + Prisma)
+  # ----------------------------------------------------------------------------
+  # Job 1: CI Validation (Backend & Frontend)
+  # ----------------------------------------------------------------------------
+  backend-ci:
+    name: Backend Build & TypeCheck
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'npm'
+          cache: "npm"
           cache-dependency-path: dev-backend-mexpo-new/package-lock.json
 
-      - name: Install Backend Dependencies
-        working-directory: dev-backend-mexpo-new
+      - name: Install Dependencies
+        working-directory: ./dev-backend-mexpo-new
         run: npm ci
 
       - name: Generate Prisma Client
-        working-directory: dev-backend-mexpo-new
+        working-directory: ./dev-backend-mexpo-new
         run: npx prisma generate
 
-      - name: Build NestJS Application
-        working-directory: dev-backend-mexpo-new
+      - name: Compile TypeScript & Build
+        working-directory: ./dev-backend-mexpo-new
         run: npm run build
 
-  # ============================================================
-  # 2. Frontend Build & Type Check
-  # ============================================================
-  check-frontend:
-    name: Check Frontend (Next.js 16)
+  frontend-ci:
+    name: Frontend Build & TypeCheck
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'npm'
+          cache: "npm"
           cache-dependency-path: dev-frontend-mexpo-new/package-lock.json
 
-      - name: Install Frontend Dependencies
-        working-directory: dev-frontend-mexpo-new
+      - name: Install Dependencies
+        working-directory: ./dev-frontend-mexpo-new
         run: npm ci
 
-      - name: Build Next.js Application
-        working-directory: dev-frontend-mexpo-new
+      - name: Build Next.js App
+        working-directory: ./dev-frontend-mexpo-new
         env:
           NEXT_TELEMETRY_DISABLED: 1
           NODE_ENV: production
-          NEXT_PUBLIC_BASE_URL_PRODUCTION: http://localhost:3500
-          NEXT_PUBLIC_BASE_URL_DEVELOPMENT: http://localhost:3500
-          NEXT_PUBLIC_BASIC_AUTH_USERNAME: dummy
-          NEXT_PUBLIC_BASIC_AUTH_PASSWORD: dummy
-          NEXT_PUBLIC_TOKEN_KEY: mexpo-token
+          NEXT_PUBLIC_BASE_URL_PRODUCTION: ${{ secrets.NEXT_PUBLIC_BASE_URL_PRODUCTION || 'http://localhost:3500' }}
+          NEXT_PUBLIC_BASE_URL_DEVELOPMENT: ${{ secrets.NEXT_PUBLIC_BASE_URL_DEVELOPMENT || 'http://backend:3500' }}
+          NEXT_PUBLIC_BASIC_AUTH_USERNAME: ${{ secrets.BASIC_AUTH_USERNAME || 'mexpo_admin' }}
+          NEXT_PUBLIC_BASIC_AUTH_PASSWORD: ${{ secrets.BASIC_AUTH_PASSWORD || 'dummy_password' }}
+          NEXT_PUBLIC_TOKEN_KEY: ${{ secrets.NEXT_PUBLIC_TOKEN_KEY || 'mexpo-token' }}
         run: npm run build
 
-  # ============================================================
-  # 3. Deploy to EC2 (Only runs when both checks succeed on main)
-  # ============================================================
-  deploy:
-    name: Deploy to EC2
-    needs: [check-backend, check-frontend]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  # ----------------------------------------------------------------------------
+  # Job 2: Build and Push Docker Images to Amazon ECR
+  # ----------------------------------------------------------------------------
+  build-and-push:
+    name: Build & Push Images to ECR
+    needs: [backend-ci, frontend-ci]
     runs-on: ubuntu-latest
+    timeout-minutes: 25
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Deploy to EC2 via SSH
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT || 22 }}
-          script_stop: true
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push Backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./dev-backend-mexpo-new
+          file: ./dev-backend-mexpo-new/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.ECR_BACKEND_IMAGE }}:latest
+            ${{ secrets.ECR_BACKEND_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push Frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./dev-frontend-mexpo-new
+          file: ./dev-frontend-mexpo-new/Dockerfile
+          push: true
+          build-args: |
+            NEXT_PUBLIC_BASE_URL_PRODUCTION=${{ secrets.NEXT_PUBLIC_BASE_URL_PRODUCTION || 'http://localhost:3500' }}
+            NEXT_PUBLIC_BASE_URL_DEVELOPMENT=${{ secrets.NEXT_PUBLIC_BASE_URL_DEVELOPMENT || 'http://backend:3500' }}
+            NEXT_PUBLIC_BASIC_AUTH_USERNAME=${{ secrets.BASIC_AUTH_USERNAME || '' }}
+            NEXT_PUBLIC_BASIC_AUTH_PASSWORD=${{ secrets.BASIC_AUTH_PASSWORD || '' }}
+            NEXT_PUBLIC_TOKEN_KEY=${{ secrets.NEXT_PUBLIC_TOKEN_KEY || 'mexpo-token' }}
+            NEXT_PUBLIC_MIDTRANS_CLIENT_KEY=${{ secrets.MIDTRANS_CLIENT_KEY || '' }}
+            NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION=${{ secrets.MIDTRANS_IS_PRODUCTION || 'false' }}
+            NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID || '' }}
+          tags: |
+            ${{ secrets.ECR_FRONTEND_IMAGE }}:latest
+            ${{ secrets.ECR_FRONTEND_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ----------------------------------------------------------------------------
+  # Job 3: Deploy to EC2 via SSH
+  # ----------------------------------------------------------------------------
+  deploy-to-ec2:
+    name: Deploy to EC2 Instance
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials for ECR pull token
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Mint short-lived ECR pull token
+        id: ecr-token
+        run: |
+          echo "ecr_token=$(aws ecr get-login-password --region ${{ secrets.AWS_REGION }})" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure deployment directory on EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ secrets.EC2_PORT || 22 }}
+          timeout: 30s
+          command_timeout: 5m
           script: |
-            git config --global --add safe.directory "*"
+            mkdir -p /opt/mexpo/app
+
+      - name: Upload compose configuration
+        uses: appleboy/scp-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ secrets.EC2_PORT || 22 }}
+          timeout: 30s
+          command_timeout: 5m
+          source: "docker-compose.prod.yml"
+          target: "/opt/mexpo/app"
+
+      - name: Write runtime environment, pull images, and restart stack
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          ECR_TOKEN: ${{ steps.ecr-token.outputs.ecr_token }}
+          ECR_BACKEND_IMAGE: ${{ secrets.ECR_BACKEND_IMAGE }}
+          ECR_FRONTEND_IMAGE: ${{ secrets.ECR_FRONTEND_IMAGE }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          TAG: latest
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ secrets.EC2_PORT || 22 }}
+          timeout: 30s
+          command_timeout: 10m
+          envs: ECR_TOKEN,ECR_BACKEND_IMAGE,ECR_FRONTEND_IMAGE,AWS_REGION,TAG
+          script: |
+            set -e
+
+            cd /opt/mexpo/app
+
+            # Write runtime environment for Docker Compose
+            cat > .env <<EOF
+            TAG=${TAG}
+            ECR_BACKEND_IMAGE=${ECR_BACKEND_IMAGE}
+            ECR_FRONTEND_IMAGE=${ECR_FRONTEND_IMAGE}
             
-            echo "🚀 Entering deployment directory..."
-            cd ~
-            mkdir -p backup-mexpo
-            cd backup-mexpo
+            # Database Configuration
+            DB_PROVIDER=${{ secrets.DB_PROVIDER || 'postgresql' }}
+            DB_HOST=${{ secrets.DB_HOST || 'postgres' }}
+            DB_PORT=${{ secrets.DB_PORT || '5432' }}
+            DB_USER=${{ secrets.DB_USER || 'postgres' }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            DB_NAME=${{ secrets.DB_NAME || 'mexpo_db' }}
+            DB_SSLMODE=${{ secrets.DB_SSLMODE || '' }}
 
-            REPO_URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+            # Object Storage (MinIO / S3)
+            MINIO_ROOT_USER=${{ secrets.MINIO_ROOT_USER || 'minioadmin' }}
+            MINIO_ROOT_PASSWORD=${{ secrets.MINIO_ROOT_PASSWORD }}
+            MINIO_PORT=${{ secrets.MINIO_PORT || '9000' }}
+            MINIO_CONSOLE_PORT=${{ secrets.MINIO_CONSOLE_PORT || '9001' }}
+            MINIO_ENDPOINT=${{ secrets.MINIO_ENDPOINT || 'http://localhost:9000' }}
+            MINIO_ENDPOINT_UPLOAD=${{ secrets.MINIO_ENDPOINT_UPLOAD || 'http://minio:9000' }}
+            MINIO_ACCESS_KEY=${{ secrets.MINIO_ACCESS_KEY || secrets.MINIO_ROOT_USER || 'minioadmin' }}
+            MINIO_SECRET_KEY=${{ secrets.MINIO_SECRET_KEY || secrets.MINIO_ROOT_PASSWORD }}
+            MINIO_BUCKET=${{ secrets.MINIO_BUCKET || 'expo-project' }}
+            AWS_REGION=${{ secrets.AWS_REGION || 'us-east-1' }}
 
-            echo "📥 Syncing git repository..."
-            if [ ! -d ".git" ]; then
-              git init
-              git branch -M main 2>/dev/null || true
-            fi
-            
-            # Reset remote origin cleanly
-            git remote remove origin 2>/dev/null || true
-            git remote add origin "$REPO_URL"
+            # Backend Configuration
+            BACKEND_PORT=${{ secrets.BACKEND_PORT || '3500' }}
+            NODE_ENV=production
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            BASIC_AUTH_USERNAME=${{ secrets.BASIC_AUTH_USERNAME }}
+            BASIC_AUTH_PASSWORD=${{ secrets.BASIC_AUTH_PASSWORD }}
+            PUBLIC_FRONTEND_URL=${{ secrets.PUBLIC_FRONTEND_URL || 'http://localhost:3000' }}
+            API_BASE_URL=${{ secrets.API_BASE_URL || 'http://localhost:3500' }}
 
-            echo "📦 Fetching latest code from main..."
-            git fetch origin main --depth=1 --force
-            git reset --hard origin/main
+            # SMTP Mail Configuration
+            MAIL_HOST=${{ secrets.MAIL_HOST || 'smtp.gmail.com' }}
+            MAIL_PORT=${{ secrets.MAIL_PORT || '465' }}
+            MAIL_SECURE=${{ secrets.MAIL_SECURE || 'true' }}
+            MAIL_USER=${{ secrets.MAIL_USER || '' }}
+            MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD || '' }}
+            CONTACT_DESTINATION_EMAIL=${{ secrets.CONTACT_DESTINATION_EMAIL || '' }}
 
-            # Ensure .env file exists for Docker Compose
-            if [ ! -f ".env" ] && [ -f ".env.example" ]; then
-              echo "📝 Creating initial .env from .env.example..."
-              cp .env.example .env
-            fi
+            # Payment Gateway (Midtrans Snap)
+            MIDTRANS_IS_PRODUCTION=${{ secrets.MIDTRANS_IS_PRODUCTION || 'false' }}
+            MIDTRANS_SERVER_KEY=${{ secrets.MIDTRANS_SERVER_KEY || '' }}
+            MIDTRANS_CLIENT_KEY=${{ secrets.MIDTRANS_CLIENT_KEY || '' }}
+            MIDTRANS_IS_3DS=${{ secrets.MIDTRANS_IS_3DS || 'true' }}
+            MIDTRANS_PAYMENT_EXPIRY=${{ secrets.MIDTRANS_PAYMENT_EXPIRY || '1440' }}
+            PAYMENT_PLATFORM_FEE_PERCENT=${{ secrets.PAYMENT_PLATFORM_FEE_PERCENT || '5' }}
 
-            # Check if docker compose exists
-            if command -v docker &> /dev/null && [ -f "docker-compose.yml" ]; then
-              echo "🐳 Deploying via Docker Compose..."
-              docker compose up -d --build --remove-orphans
-              
-              echo "🧹 Cleaning up unused images and build cache..."
-              docker image prune -f
-              docker builder prune -f --keep-storage 1GB || true
-            elif command -v pm2 &> /dev/null; then
-              echo "🚀 Deploying Backend via PM2..."
-              cd dev-backend-mexpo-new
-              npm install --production=false
-              npx prisma migrate deploy
-              npm run build
-              pm2 restart backend-expo || pm2 start dist/src/main.js --name backend-expo
+            # Google OAuth & Partner Integration
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID || '' }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET || '' }}
+            MEXPO_INTEGRATION_API_KEY=${{ secrets.MEXPO_INTEGRATION_API_KEY || '' }}
+            MEXPO_WEBHOOK_SECRET=${{ secrets.MEXPO_WEBHOOK_SECRET || '' }}
+
+            # Frontend Runtime Configuration
+            FRONTEND_PORT=${{ secrets.FRONTEND_PORT || '3000' }}
+            NEXT_PUBLIC_BASE_URL_PRODUCTION=${{ secrets.NEXT_PUBLIC_BASE_URL_PRODUCTION || 'http://localhost:3500' }}
+            NEXT_PUBLIC_BASE_URL_DEVELOPMENT=${{ secrets.NEXT_PUBLIC_BASE_URL_DEVELOPMENT || 'http://backend:3500' }}
+            NEXT_PUBLIC_BASIC_AUTH_USERNAME=${{ secrets.BASIC_AUTH_USERNAME || '' }}
+            NEXT_PUBLIC_BASIC_AUTH_PASSWORD=${{ secrets.BASIC_AUTH_PASSWORD || '' }}
+            NEXT_PUBLIC_TOKEN_KEY=${{ secrets.NEXT_PUBLIC_TOKEN_KEY || 'mexpo-token' }}
+            NEXT_PUBLIC_MIDTRANS_CLIENT_KEY=${{ secrets.MIDTRANS_CLIENT_KEY || '' }}
+            NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION=${{ secrets.MIDTRANS_IS_PRODUCTION || 'false' }}
+            NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID || '' }}
+            EOF
+
+            # Detect compose command syntax (docker compose vs docker-compose)
+            if docker compose version >/dev/null 2>&1; then
+              COMPOSE="docker compose"
             else
-              echo "⚠️ Neither Docker nor PM2 configuration matched."
+              COMPOSE="docker-compose"
             fi
 
-            echo "🎉 Deployment completed successfully!"
+            # Authenticate against AWS ECR on EC2 using minted token
+            if [ -n "$ECR_BACKEND_IMAGE" ]; then
+              REGISTRY=$(echo "$ECR_BACKEND_IMAGE" | cut -d'/' -f1)
+              echo "$ECR_TOKEN" | docker login --username AWS --password-stdin "$REGISTRY" >/dev/null
+            fi
+
+            # Pull latest built images and start stack
+            $COMPOSE -f docker-compose.prod.yml pull
+            $COMPOSE -f docker-compose.prod.yml up -d --remove-orphans
+
+            # Wait for PostgreSQL container to become ready if postgres service is running
+            if $COMPOSE -f docker-compose.prod.yml ps postgres | grep -q "postgres"; then
+              echo "⏳ Waiting for PostgreSQL to be ready..."
+              for i in $(seq 1 30); do
+                if $COMPOSE -f docker-compose.prod.yml exec -T postgres pg_isready -U "${{ secrets.DB_USER || 'postgres' }}" -d "${{ secrets.DB_NAME || 'mexpo_db' }}" >/dev/null 2>&1; then
+                  echo "✅ PostgreSQL is ready and accepting connections!"
+                  break
+                fi
+                echo "Waiting for database ($i/30)..."
+                sleep 2
+              done
+            fi
+
+            # Automatically run database schema migrations
+            echo "📦 Running database migrations on EC2..."
+            $COMPOSE -f docker-compose.prod.yml exec -T backend npx prisma migrate deploy || {
+              echo "⚠️ Warning: Prisma migrate deploy returned non-zero code. Check logs."
+            }
+
+            # Clean up dangling images to preserve disk space
+            docker image prune -f || true
