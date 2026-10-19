@@ -28,7 +28,7 @@ services:
   # Object Storage (MinIO S3 Compatible)
   # ------------------------------------------------------------
   minio:
-    image: quay.io/minio/minio:latest
+    image: elestio/minio:latest
     container_name: mexpo-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
@@ -53,7 +53,7 @@ services:
   # Creates all application buckets and enables public download policy
   # ------------------------------------------------------------
   minio-init:
-    image: quay.io/minio/mc:latest
+    image: elestio/minio:latest
     container_name: mexpo-minio-init
     depends_on:
       - minio
