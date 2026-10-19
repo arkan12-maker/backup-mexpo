@@ -100,7 +100,7 @@ jobs:
         env:
           NEXT_TELEMETRY_DISABLED: 1
           NODE_ENV: production
-          NEXT_PUBLIC_BASE_URL_PRODUCTION: ${{ secrets.NEXT_PUBLIC_BASE_URL_PRODUCTION || 'http://localhost:3500' }}
+          NEXT_PUBLIC_BASE_URL_PRODUCTION: ${{ secrets.NEXT_PUBLIC_BASE_URL_PRODUCTION || 'https://dev-backend-expo.4rk4n.dev' }}
           NEXT_PUBLIC_BASE_URL_DEVELOPMENT: ${{ secrets.NEXT_PUBLIC_BASE_URL_DEVELOPMENT || 'http://backend:3500' }}
           NEXT_PUBLIC_BASIC_AUTH_USERNAME: ${{ secrets.BASIC_AUTH_USERNAME || 'mexpo_admin' }}
           NEXT_PUBLIC_BASIC_AUTH_PASSWORD: ${{ secrets.BASIC_AUTH_PASSWORD || 'dummy_password' }}
@@ -128,7 +128,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ secrets.AWS_REGION || 'ap-southeast-2' }}
 
       - name: Log in to Amazon ECR
         id: login-ecr
@@ -153,7 +153,7 @@ jobs:
           file: ./dev-frontend-mexpo-new/Dockerfile
           push: true
           build-args: |
-            NEXT_PUBLIC_BASE_URL_PRODUCTION=${{ secrets.NEXT_PUBLIC_BASE_URL_PRODUCTION || 'http://localhost:3500' }}
+            NEXT_PUBLIC_BASE_URL_PRODUCTION=${{ secrets.NEXT_PUBLIC_BASE_URL_PRODUCTION || 'https://dev-backend-expo.4rk4n.dev' }}
             NEXT_PUBLIC_BASE_URL_DEVELOPMENT=${{ secrets.NEXT_PUBLIC_BASE_URL_DEVELOPMENT || 'http://backend:3500' }}
             NEXT_PUBLIC_BASIC_AUTH_USERNAME=${{ secrets.BASIC_AUTH_USERNAME || '' }}
             NEXT_PUBLIC_BASIC_AUTH_PASSWORD=${{ secrets.BASIC_AUTH_PASSWORD || '' }}
@@ -185,12 +185,12 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ secrets.AWS_REGION || 'ap-southeast-2' }}
 
       - name: Mint short-lived ECR pull token
         id: ecr-token
         run: |
-          echo "ecr_token=$(aws ecr get-login-password --region ${{ secrets.AWS_REGION }})" >> "$GITHUB_OUTPUT"
+          echo "ecr_token=$(aws ecr get-login-password --region ${{ secrets.AWS_REGION || 'ap-southeast-2' }})" >> "$GITHUB_OUTPUT"
 
       - name: Ensure deployment directory on EC2
         uses: appleboy/ssh-action@v1.2.0
@@ -223,7 +223,7 @@ jobs:
           ECR_TOKEN: ${{ steps.ecr-token.outputs.ecr_token }}
           ECR_BACKEND_IMAGE: ${{ secrets.ECR_BACKEND_IMAGE }}
           ECR_FRONTEND_IMAGE: ${{ secrets.ECR_FRONTEND_IMAGE }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_REGION: ${{ secrets.AWS_REGION || 'ap-southeast-2' }}
           TAG: latest
         with:
           host: ${{ secrets.EC2_HOST || secrets.SSH_HOST }}
@@ -248,31 +248,31 @@ jobs:
             DB_PROVIDER=${{ secrets.DB_PROVIDER || 'postgresql' }}
             DB_HOST=${{ secrets.DB_HOST || 'postgres' }}
             DB_PORT=${{ secrets.DB_PORT || '5432' }}
-            DB_USER=${{ secrets.DB_USER || 'postgres' }}
-            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            DB_USER=${{ secrets.DB_USER || 'mexpo_user' }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD || 'mexpo_password_2026' }}
             DB_NAME=${{ secrets.DB_NAME || 'mexpo_db' }}
             DB_SSLMODE=${{ secrets.DB_SSLMODE || '' }}
 
             # Object Storage (MinIO / S3)
             MINIO_ROOT_USER=${{ secrets.MINIO_ROOT_USER || 'minioadmin' }}
-            MINIO_ROOT_PASSWORD=${{ secrets.MINIO_ROOT_PASSWORD }}
+            MINIO_ROOT_PASSWORD=${{ secrets.MINIO_ROOT_PASSWORD || 'minioadmin123' }}
             MINIO_PORT=${{ secrets.MINIO_PORT || '9000' }}
             MINIO_CONSOLE_PORT=${{ secrets.MINIO_CONSOLE_PORT || '9001' }}
-            MINIO_ENDPOINT=${{ secrets.MINIO_ENDPOINT || 'http://localhost:9000' }}
+            MINIO_ENDPOINT=${{ secrets.MINIO_ENDPOINT || 'https://dev-backend-expo.4rk4n.dev' }}
             MINIO_ENDPOINT_UPLOAD=${{ secrets.MINIO_ENDPOINT_UPLOAD || 'http://minio:9000' }}
             MINIO_ACCESS_KEY=${{ secrets.MINIO_ACCESS_KEY || secrets.MINIO_ROOT_USER || 'minioadmin' }}
-            MINIO_SECRET_KEY=${{ secrets.MINIO_SECRET_KEY || secrets.MINIO_ROOT_PASSWORD }}
+            MINIO_SECRET_KEY=${{ secrets.MINIO_SECRET_KEY || secrets.MINIO_ROOT_PASSWORD || 'minioadmin123' }}
             MINIO_BUCKET=${{ secrets.MINIO_BUCKET || 'expo-project' }}
-            AWS_REGION=${{ secrets.AWS_REGION || 'us-east-1' }}
+            AWS_REGION=${{ secrets.AWS_REGION || 'ap-southeast-2' }}
 
             # Backend Configuration
             BACKEND_PORT=${{ secrets.BACKEND_PORT || '3500' }}
             NODE_ENV=production
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            BASIC_AUTH_USERNAME=${{ secrets.BASIC_AUTH_USERNAME }}
-            BASIC_AUTH_PASSWORD=${{ secrets.BASIC_AUTH_PASSWORD }}
-            PUBLIC_FRONTEND_URL=${{ secrets.PUBLIC_FRONTEND_URL || 'http://localhost:3000' }}
-            API_BASE_URL=${{ secrets.API_BASE_URL || 'http://localhost:3500' }}
+            JWT_SECRET=${{ secrets.JWT_SECRET || 'AyamGolek' }}
+            BASIC_AUTH_USERNAME=${{ secrets.BASIC_AUTH_USERNAME || 'bidinCaem' }}
+            BASIC_AUTH_PASSWORD=${{ secrets.BASIC_AUTH_PASSWORD || 'bidinGuruSMK' }}
+            PUBLIC_FRONTEND_URL=${{ secrets.PUBLIC_FRONTEND_URL || 'https://dev-frontend-expo.4rk4n.dev' }}
+            API_BASE_URL=${{ secrets.API_BASE_URL || 'https://dev-backend-expo.4rk4n.dev' }}
 
             # SMTP Mail Configuration
             MAIL_HOST=${{ secrets.MAIL_HOST || 'smtp.gmail.com' }}
@@ -298,10 +298,10 @@ jobs:
 
             # Frontend Runtime Configuration
             FRONTEND_PORT=${{ secrets.FRONTEND_PORT || '3000' }}
-            NEXT_PUBLIC_BASE_URL_PRODUCTION=${{ secrets.NEXT_PUBLIC_BASE_URL_PRODUCTION || 'http://localhost:3500' }}
+            NEXT_PUBLIC_BASE_URL_PRODUCTION=${{ secrets.NEXT_PUBLIC_BASE_URL_PRODUCTION || 'https://dev-backend-expo.4rk4n.dev' }}
             NEXT_PUBLIC_BASE_URL_DEVELOPMENT=${{ secrets.NEXT_PUBLIC_BASE_URL_DEVELOPMENT || 'http://backend:3500' }}
-            NEXT_PUBLIC_BASIC_AUTH_USERNAME=${{ secrets.BASIC_AUTH_USERNAME || '' }}
-            NEXT_PUBLIC_BASIC_AUTH_PASSWORD=${{ secrets.BASIC_AUTH_PASSWORD || '' }}
+            NEXT_PUBLIC_BASIC_AUTH_USERNAME=${{ secrets.BASIC_AUTH_USERNAME || 'bidinCaem' }}
+            NEXT_PUBLIC_BASIC_AUTH_PASSWORD=${{ secrets.BASIC_AUTH_PASSWORD || 'bidinGuruSMK' }}
             NEXT_PUBLIC_TOKEN_KEY=${{ secrets.NEXT_PUBLIC_TOKEN_KEY || 'mexpo-token' }}
             NEXT_PUBLIC_MIDTRANS_CLIENT_KEY=${{ secrets.MIDTRANS_CLIENT_KEY || '' }}
             NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION=${{ secrets.MIDTRANS_IS_PRODUCTION || 'false' }}
@@ -329,7 +329,7 @@ jobs:
             if $COMPOSE -f docker-compose.prod.yml ps postgres | grep -q "postgres"; then
               echo "⏳ Waiting for PostgreSQL to be ready..."
               for i in $(seq 1 30); do
-                if $COMPOSE -f docker-compose.prod.yml exec -T postgres pg_isready -U "${{ secrets.DB_USER || 'postgres' }}" -d "${{ secrets.DB_NAME || 'mexpo_db' }}" >/dev/null 2>&1; then
+                if $COMPOSE -f docker-compose.prod.yml exec -T postgres pg_isready -U "${{ secrets.DB_USER || 'mexpo_user' }}" -d "${{ secrets.DB_NAME || 'mexpo_db' }}" >/dev/null 2>&1; then
                   echo "✅ PostgreSQL is ready and accepting connections!"
                   break
                 fi

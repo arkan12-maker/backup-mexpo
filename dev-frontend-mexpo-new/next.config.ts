@@ -7,9 +7,9 @@ const securityHeaders = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://app.sandbox.midtrans.com https://app.midtrans.com https://accounts.google.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      "img-src 'self' data: blob: https://98.80.142.172:* http://98.80.142.172:* https://localhost:* http://localhost:* https://images.unsplash.com https://s3.smktelkom-mlg.sch.id https://img.youtube.com https://i.ytimg.com https://via.placeholder.com https://lh3.googleusercontent.com https://*.googleusercontent.com https://app.sandbox.midtrans.com https://app.midtrans.com",
+      "img-src 'self' data: blob: https://*.4rk4n.dev http://*.4rk4n.dev https://100.27.43.122:* http://100.27.43.122:* https://98.80.142.172:* http://98.80.142.172:* https://localhost:* http://localhost:* https://images.unsplash.com https://s3.smktelkom-mlg.sch.id https://img.youtube.com https://i.ytimg.com https://via.placeholder.com https://lh3.googleusercontent.com https://*.googleusercontent.com https://app.sandbox.midtrans.com https://app.midtrans.com",
       "font-src 'self' data: https://fonts.gstatic.com",
-      "connect-src 'self' https://98.80.142.172:* http://98.80.142.172:* https://localhost:* http://localhost:* https://mexpo-api.smktelkom-mlg.sch.id https://*.smktelkom-mlg.sch.id https://app.sandbox.midtrans.com https://app.midtrans.com https://api.sandbox.midtrans.com https://api.midtrans.com https://accounts.google.com https://*.googleapis.com",
+      "connect-src 'self' https://*.4rk4n.dev http://*.4rk4n.dev https://100.27.43.122:* http://100.27.43.122:* https://98.80.142.172:* http://98.80.142.172:* https://localhost:* http://localhost:* https://mexpo-api.smktelkom-mlg.sch.id https://*.smktelkom-mlg.sch.id https://app.sandbox.midtrans.com https://app.midtrans.com https://api.sandbox.midtrans.com https://api.midtrans.com https://accounts.google.com https://*.googleapis.com",
       "frame-src 'self' https://app.sandbox.midtrans.com https://app.midtrans.com https://accounts.google.com",
       "frame-ancestors 'self'",
       "object-src 'none'",
@@ -61,6 +61,30 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
+        hostname: '*.4rk4n.dev',
+      },
+      {
+        protocol: 'http',
+        hostname: '*.4rk4n.dev',
+      },
+      {
+        protocol: 'https',
+        hostname: 'dev-backend-expo.4rk4n.dev',
+      },
+      {
+        protocol: 'http',
+        hostname: 'dev-backend-expo.4rk4n.dev',
+      },
+      {
+        protocol: 'https',
+        hostname: 'dev-frontend-expo.4rk4n.dev',
+      },
+      {
+        protocol: 'http',
+        hostname: 'dev-frontend-expo.4rk4n.dev',
+      },
+      {
+        protocol: 'https',
         hostname: 'images.unsplash.com',
       },
       {
@@ -86,6 +110,14 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'localhost',
+      },
+      {
+        protocol: 'http',
+        hostname: '100.27.43.122',
+      },
+      {
+        protocol: 'https',
+        hostname: '100.27.43.122',
       },
       {
         protocol: 'http',
