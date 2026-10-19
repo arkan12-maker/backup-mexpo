@@ -248,6 +248,7 @@ jobs:
             DB_PROVIDER=${{ secrets.DB_PROVIDER || 'postgresql' }}
             DB_HOST=${{ secrets.DB_HOST || 'postgres' }}
             DB_PORT=${{ secrets.DB_PORT || '5432' }}
+            DB_PORT_HOST=${{ secrets.DB_PORT_HOST || '5433' }}
             DB_USER=${{ secrets.DB_USER || 'mexpo_user' }}
             DB_PASSWORD=${{ secrets.DB_PASSWORD || 'mexpo_password_2026' }}
             DB_NAME=${{ secrets.DB_NAME || 'mexpo_db' }}
