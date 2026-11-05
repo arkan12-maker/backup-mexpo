@@ -721,59 +721,60 @@ export default function SuperAdminDashboard() {
     },
   ];
 
-  return (
-    <div className="pb-20 max-w-7xl mx-auto space-y-8">
-      {/* ── Top Header with Mexpo Geometric Branding ── */}
-      <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 lg:p-10 shadow-lg border border-blue-400/20 text-white">
-        <GeometricBannerBg className="rounded-3xl" />
+  const topBanner = (
+    <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 lg:p-10 shadow-lg border border-blue-400/20 text-white">
+      <GeometricBannerBg className="rounded-3xl" />
 
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md text-white border border-white/20 px-3.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider shadow-xs">
-              <ShieldCheck className="w-3.5 h-3.5 text-blue-100" />
-              SuperAdmin Command Center
-            </div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight font-outfit text-white">
-              Halo, {user?.full_name || "Super Admin"} 👋
-            </h1>
-            <p className="text-blue-50/90 text-sm sm:text-base leading-relaxed">
-              Pusat kendali ekosistem Mexpo. Pantau metrik platform, verifikasi
-              rilis event, kelola akun, transaksi tiket, dan kustomisasi konten secara terpusat.
-            </p>
+      <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div className="space-y-3 max-w-2xl">
+          <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md text-white border border-white/20 px-3.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider shadow-xs">
+            <ShieldCheck className="w-3.5 h-3.5 text-blue-100" />
+            SuperAdmin Command Center
           </div>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight font-outfit text-white">
+            Halo, {user?.full_name || "Super Admin"} 👋
+          </h1>
+          <p className="text-blue-50/90 text-sm sm:text-base leading-relaxed">
+            Pusat kendali ekosistem Mexpo. Pantau metrik platform, verifikasi
+            rilis event, kelola akun, transaksi tiket, dan kustomisasi konten secara terpusat.
+          </p>
+        </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <Link
-              href="/dashboard/create"
-              className="inline-flex items-center gap-2 bg-white text-secondary hover:bg-blue-50 font-semibold text-xs sm:text-sm px-5 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all"
-            >
-              <Plus className="w-4 h-4 text-secondary" />
-              Buat Event
-            </Link>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/dashboard/create"
+            className="inline-flex items-center gap-2 bg-white text-secondary hover:bg-blue-50 font-semibold text-xs sm:text-sm px-5 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all"
+          >
+            <Plus className="w-4 h-4 text-secondary" />
+            Buat Event
+          </Link>
 
-            <button
-              onClick={() => refetch()}
-              disabled={isFetching}
-              className="inline-flex items-center gap-2 bg-white/15 hover:bg-white/25 backdrop-blur-md text-white border border-white/20 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all shadow-xs cursor-pointer"
-              title="Perbarui Data"
-            >
-              <RefreshCw
-                className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`}
-              />
-              Perbarui
-            </button>
-          </div>
+          <button
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="inline-flex items-center gap-2 bg-white/15 hover:bg-white/25 backdrop-blur-md text-white border border-white/20 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all shadow-xs cursor-pointer"
+            title="Perbarui Data"
+          >
+            <RefreshCw
+              className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`}
+            />
+            Perbarui
+          </button>
         </div>
       </div>
-
-      {/* ── Left Sidebar Main Dashboard Layout ── */}
-      <DashboardSidebarLayout
-        groups={tabGroups}
-        defaultGroupId="overview-group"
-        defaultSubTabId="dashboard-overview"
-        sidebarHeader={sidebarHeader}
-        sidebarFooter={sidebarFooter}
-      />
     </div>
+  );
+
+  return (
+    <DashboardSidebarLayout
+      groups={tabGroups}
+      defaultGroupId="overview-group"
+      defaultSubTabId="dashboard-overview"
+      sidebarHeader={sidebarHeader}
+      sidebarFooter={sidebarFooter}
+      backHref="/"
+      backLabel="Kembali ke Beranda"
+      topHeader={topBanner}
+    />
   );
 }

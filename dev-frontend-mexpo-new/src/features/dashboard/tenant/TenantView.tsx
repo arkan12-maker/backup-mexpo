@@ -197,22 +197,23 @@ export default function TenantView({ event }: Props) {
   );
 
   return (
-    <PageShell className="py-8">
-      {/* ── Top Hero ── */}
-      <EventHero
-        event={event}
-        roleLabel="Penyewa"
-        roleIcon={Store}
-        roleBadge={getRoleBadge("TENANT")}
-      />
-
-      {/* ── Main Left-Sidebar Dashboard ── */}
+    <>
       <DashboardSidebarLayout
         groups={sidebarGroups}
         defaultGroupId="analitik"
         defaultSubTabId={activeTabKey}
         sidebarHeader={sidebarHeader}
         sidebarFooter={sidebarFooter}
+        backHref="/dashboard"
+        backLabel="Kembali ke Dashboard"
+        topHeader={
+          <EventHero
+            event={event}
+            roleLabel="Penyewa"
+            roleIcon={Store}
+            roleBadge={getRoleBadge("TENANT")}
+          />
+        }
       />
 
       {/* ── ID Badge Modal ── */}
@@ -222,7 +223,7 @@ export default function TenantView({ event }: Props) {
         onClose={() => setBadgeOpen(false)}
         role="TENANT"
       />
-    </PageShell>
+    </>
   );
 }
 

@@ -32,6 +32,7 @@ import { keys } from "@/lib/query-keys";
 import { publishRequest, finishEvent, reopenEvent } from "@/services/event.service";
 import EventHero from "@/features/dashboard/shared/EventHero";
 import EventOverview from "@/features/dashboard/shared/EventOverview";
+import EventPopularStats from "@/features/dashboard/shared/EventPopularStats";
 import { getRoleBadge } from "@/shared/utils/role-badge";
 import DashboardSidebarLayout, {
   SidebarTabGroup,
@@ -117,7 +118,12 @@ export default function CommitteeView({ event }: Props) {
     reopen.mutate();
   };
 
-  const overviewContent = <EventOverview event={event} showStats />;
+  const overviewContent = (
+    <div className="space-y-6">
+      <EventPopularStats eventId={event.uuid} />
+      <EventOverview event={event} showStats />
+    </div>
+  );
 
   const tabGroups: SidebarTabGroup[] = [
     {
@@ -330,31 +336,34 @@ export default function CommitteeView({ event }: Props) {
   ) : undefined;
 
   return (
-    <PageShell className="py-8">
-      {/* ── Top Hero ── */}
-      <EventHero
-        event={event}
-        roleLabel="Panitia"
-        roleIcon={ShieldCheck}
-        roleBadge={getRoleBadge("COMMITTEE")}
-      />
-
-      {event.status === "REJECTED" && event.rejection_reason && (
-        <div className="bg-red-50 mb-6 p-4 border border-red-200 rounded-2xl text-red-700 text-sm">
-          <strong>Alasan penolakan:</strong> {event.rejection_reason}
-        </div>
-      )}
-
-      {/* ── Main Left-Sidebar Dashboard Layout ── */}
+    <>
       <DashboardSidebarLayout
         groups={tabGroups}
         defaultGroupId="overview"
         defaultSubTabId="info"
         sidebarHeader={sidebarHeader}
         sidebarFooter={sidebarFooter}
+        backHref="/dashboard"
+        backLabel="Kembali ke Dashboard"
+        topHeader={
+          <div className="space-y-4">
+            <EventHero
+              event={event}
+              roleLabel="Panitia"
+              roleIcon={ShieldCheck}
+              roleBadge={getRoleBadge("COMMITTEE")}
+            />
+
+            {event.status === "REJECTED" && event.rejection_reason && (
+              <div className="bg-red-50 p-4 border border-red-200 rounded-2xl text-red-700 text-sm">
+                <strong>Alasan penolakan:</strong> {event.rejection_reason}
+              </div>
+            )}
+          </div>
+        }
       />
 
       {dialogs}
-    </PageShell>
+    </>
   );
 }

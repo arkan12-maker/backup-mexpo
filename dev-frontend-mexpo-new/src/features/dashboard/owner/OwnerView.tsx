@@ -39,6 +39,7 @@ import {
 } from "@/services/event.service";
 import EventHero from "@/features/dashboard/shared/EventHero";
 import EventOverview from "@/features/dashboard/shared/EventOverview";
+import EventPopularStats from "@/features/dashboard/shared/EventPopularStats";
 import ViewAction from "@/features/dashboard/shared/ViewAction";
 import { getRoleBadge } from "@/shared/utils/role-badge";
 import DashboardSidebarLayout, {
@@ -140,7 +141,12 @@ export default function OwnerView({ event }: Props) {
   const anyPending =
     publish.isPending || remove.isPending || finish.isPending || reopen.isPending;
 
-  const overviewContent = <EventOverview event={event} showStats />;
+  const overviewContent = (
+    <div className="space-y-6">
+      <EventPopularStats eventId={event.uuid} />
+      <EventOverview event={event} showStats />
+    </div>
+  );
 
   const tabGroups: SidebarTabGroup[] = [
     {
@@ -358,32 +364,34 @@ export default function OwnerView({ event }: Props) {
   );
 
   return (
-    <PageShell className="py-8">
-      {/* ── Top Hero ── */}
-      <EventHero
-        event={event}
-        roleLabel="Pemilik"
-        roleIcon={Crown}
-        roleBadge={getRoleBadge("OWNER")}
-      />
-
-      {/* A3 — rejection reason */}
-      {event.status === "REJECTED" && event.rejection_reason && (
-        <div className="bg-red-50 mb-6 p-4 border border-red-200 rounded-2xl text-red-700 text-sm">
-          <strong>Alasan penolakan:</strong> {event.rejection_reason}
-        </div>
-      )}
-
-      {/* ── Main Left-Sidebar Dashboard Layout ── */}
+    <>
       <DashboardSidebarLayout
         groups={tabGroups}
         defaultGroupId="overview"
         defaultSubTabId="info"
         sidebarHeader={sidebarHeader}
         sidebarFooter={sidebarFooter}
+        backHref="/dashboard"
+        backLabel="Kembali ke Dashboard"
+        topHeader={
+          <div className="space-y-4">
+            <EventHero
+              event={event}
+              roleLabel="Pemilik"
+              roleIcon={Crown}
+              roleBadge={getRoleBadge("OWNER")}
+            />
+
+            {event.status === "REJECTED" && event.rejection_reason && (
+              <div className="bg-red-50 p-4 border border-red-200 rounded-2xl text-red-700 text-sm">
+                <strong>Alasan penolakan:</strong> {event.rejection_reason}
+              </div>
+            )}
+          </div>
+        }
       />
 
       {dialogs}
-    </PageShell>
+    </>
   );
 }

@@ -2,7 +2,15 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { LucideIcon, Menu, X, ChevronRight } from "lucide-react";
+import {
+  LucideIcon,
+  Menu,
+  X,
+  ChevronRight,
+  ArrowLeft,
+  PanelLeftClose,
+  PanelLeft,
+} from "lucide-react";
 
 export type SidebarSubTab = {
   id: string;
@@ -31,6 +39,8 @@ interface DashboardSidebarLayoutProps {
   sidebarFooter?: React.ReactNode;
   topHeader?: React.ReactNode;
   actions?: React.ReactNode;
+  backHref?: string;
+  backLabel?: string;
 }
 
 export default function DashboardSidebarLayout({
@@ -41,6 +51,8 @@ export default function DashboardSidebarLayout({
   sidebarFooter,
   topHeader,
   actions,
+  backHref = "/dashboard",
+  backLabel = "Kembali ke Dashboard",
 }: DashboardSidebarLayoutProps) {
   const [activeGroup, setActiveGroup] = useState<string>(
     defaultGroupId || groups[0]?.id || ""
@@ -49,6 +61,7 @@ export default function DashboardSidebarLayout({
     defaultSubTabId || groups[0]?.subTabs[0]?.id || ""
   );
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const currentGroup = groups.find((g) => g.id === activeGroup);
   const currentSub = currentGroup?.subTabs.find((s) => s.id === activeSub);
@@ -61,168 +74,231 @@ export default function DashboardSidebarLayout({
   };
 
   return (
-    <div className="w-full space-y-6">
-      {/* Optional Top Header (e.g. Rejection notice, Hero banner) */}
-      {topHeader && <div className="w-full">{topHeader}</div>}
+    <div className="fixed inset-0 z-50 flex h-screen w-screen overflow-hidden bg-slate-50 text-slate-900 font-sans antialiased">
+      {/* ── Mobile Backdrop ── */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-xs lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
 
-      {/* Mobile Drawer Trigger Header */}
-      <div className="lg:hidden flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-100 shadow-xs">
-        <div className="flex items-center gap-2.5 min-w-0">
-          {currentSub?.icon && (
-            <div className="w-8 h-8 rounded-lg bg-blue-50 text-secondary flex items-center justify-center shrink-0">
-              <currentSub.icon className="w-4 h-4 text-secondary" />
-            </div>
-          )}
-          <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-              {currentGroup?.label}
-            </p>
-            <p className="text-sm font-bold text-gray-900 truncate">
-              {currentSub?.label || "Pilih Menu"}
-            </p>
-          </div>
+      {/* ── Left Sticky & Collapsible Sidebar ── */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-white border-r border-slate-200/90 shadow-md lg:shadow-none lg:static lg:h-full transition-all duration-300 ease-in-out shrink-0 ${
+          // Mobile open/close
+          mobileMenuOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0"
+        } ${
+          // Desktop collapsed/expanded
+          isCollapsed ? "lg:w-[76px]" : "lg:w-64 xl:w-72"
+        }`}
+      >
+        {/* Sidebar Top: Back Button + Collapse Toggle */}
+        <div className="p-4 border-b border-slate-100 flex items-center justify-between gap-2 shrink-0">
+          <Link
+            href={backHref}
+            title={backLabel}
+            className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-secondary hover:bg-blue-50 transition-colors ${
+              isCollapsed ? "justify-center w-full px-0" : ""
+            }`}
+          >
+            <ArrowLeft className="w-4 h-4 shrink-0" />
+            {!isCollapsed && <span className="truncate">{backLabel}</span>}
+          </Link>
+
+          {/* Collapse/Expand Toggle on Desktop */}
+          <button
+            type="button"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="hidden lg:flex items-center justify-center w-8 h-8 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors shrink-0 cursor-pointer"
+            title={isCollapsed ? "Perluas Sidebar" : "Perkecil Sidebar"}
+          >
+            {isCollapsed ? (
+              <PanelLeft className="w-4 h-4" />
+            ) : (
+              <PanelLeftClose className="w-4 h-4" />
+            )}
+          </button>
+
+          {/* Close Button on Mobile */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(false)}
+            className="lg:hidden p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors"
-        >
-          {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-          <span>{mobileMenuOpen ? "Tutup" : "Menu"}</span>
-        </button>
-      </div>
-
-      {/* Main 2-Column Sidebar Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* ── Left Sidebar (4 cols on lg, or mobile overlay) ── */}
-        <aside
-          className={`lg:col-span-4 xl:col-span-3 lg:sticky lg:top-24 flex flex-col space-y-6 bg-white p-5 sm:p-6 rounded-3xl border border-gray-100 shadow-sm transition-all ${
-            mobileMenuOpen ? "block" : "hidden lg:flex"
-          }`}
-        >
-          {/* Identity / Profile Header inside Sidebar */}
-          {sidebarHeader && (
-            <div className="pb-5 border-b border-gray-100">{sidebarHeader}</div>
-          )}
-
-          {/* Grouped Navigation Menu */}
-          <nav className="space-y-6 overflow-y-auto max-h-[calc(100vh-280px)] pr-1 scrollbar-thin">
-            {groups.map((group) => (
-              <div key={group.id} className="space-y-1">
-                <p className="text-[11px] font-extrabold uppercase tracking-wider text-gray-400 px-3 py-1.5">
-                  {group.label}
-                </p>
-
-                <div className="space-y-1">
-                  {group.subTabs.map((sub) => {
-                    const isActive =
-                      activeGroup === group.id && activeSub === sub.id;
-                    const Icon = sub.icon;
-
-                    const innerContent = (
-                      <>
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          {Icon && (
-                            <Icon
-                              className={`w-4 h-4 shrink-0 transition-colors ${
-                                isActive ? "text-white" : "text-gray-400"
-                              }`}
-                            />
-                          )}
-                          <span className="truncate">{sub.label}</span>
-                        </div>
-
-                        {sub.badge ? (
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
-                              isActive
-                                ? "bg-white/20 text-white"
-                                : sub.badgeColor || "bg-blue-50 text-secondary"
-                            }`}
-                          >
-                            {sub.badge}
-                          </span>
-                        ) : isActive ? (
-                          <ChevronRight className="w-3.5 h-3.5 text-white/80 shrink-0" />
-                        ) : null}
-                      </>
-                    );
-
-                    const baseClass = `w-full flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-                      isActive
-                        ? "bg-secondary text-white shadow-xs"
-                        : "text-gray-600 hover:bg-slate-50 hover:text-gray-900"
-                    } ${sub.disabled ? "opacity-40 cursor-not-allowed" : ""}`;
-
-                    if (sub.href) {
-                      return (
-                        <Link
-                          key={sub.id}
-                          href={sub.href}
-                          onClick={() => {
-                            if (sub.onClick) sub.onClick();
-                            setMobileMenuOpen(false);
-                          }}
-                          className={baseClass}
-                        >
-                          {innerContent}
-                        </Link>
-                      );
-                    }
-
-                    return (
-                      <button
-                        key={sub.id}
-                        type="button"
-                        disabled={sub.disabled}
-                        onClick={() => handleSelectSubTab(group, sub)}
-                        className={baseClass}
-                      >
-                        {innerContent}
-                      </button>
-                    );
-                  })}
+        {/* Sidebar Header (Identity / Role / Event badge) */}
+        {sidebarHeader && (
+          <div
+            className={`p-4 border-b border-slate-100 shrink-0 ${
+              isCollapsed ? "hidden lg:block lg:p-2 lg:text-center" : ""
+            }`}
+          >
+            {!isCollapsed ? (
+              sidebarHeader
+            ) : (
+              <div className="flex justify-center" title="Mexpo Management">
+                <div className="w-9 h-9 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center font-bold text-xs">
+                  M
                 </div>
               </div>
-            ))}
-          </nav>
+            )}
+          </div>
+        )}
 
-          {/* Sidebar Footer Actions */}
-          {sidebarFooter && (
-            <div className="pt-5 border-t border-gray-100 flex flex-col gap-2.5">
-              {sidebarFooter}
+        {/* Sidebar Navigation Items */}
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6 scrollbar-thin scrollbar-thumb-slate-200">
+          {groups.map((group) => (
+            <div key={group.id} className="space-y-1">
+              {!isCollapsed && (
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-3 py-1.5 truncate">
+                  {group.label}
+                </p>
+              )}
+
+              {isCollapsed && (
+                <div className="h-px bg-slate-100 mx-2 my-2" title={group.label} />
+              )}
+
+              <div className="space-y-1">
+                {group.subTabs.map((sub) => {
+                  const isActive =
+                    activeGroup === group.id && activeSub === sub.id;
+                  const Icon = sub.icon;
+
+                  const buttonContent = (
+                    <>
+                      <div className="flex items-center gap-3 min-w-0">
+                        {Icon && (
+                          <Icon
+                            className={`w-4 h-4 shrink-0 transition-colors ${
+                              isActive ? "text-white" : "text-slate-400"
+                            }`}
+                          />
+                        )}
+                        {!isCollapsed && (
+                          <span className="truncate text-xs font-semibold">
+                            {sub.label}
+                          </span>
+                        )}
+                      </div>
+
+                      {!isCollapsed && sub.badge ? (
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                            isActive
+                              ? "bg-white/20 text-white"
+                              : sub.badgeColor || "bg-blue-50 text-secondary"
+                          }`}
+                        >
+                          {sub.badge}
+                        </span>
+                      ) : !isCollapsed && isActive ? (
+                        <ChevronRight className="w-3.5 h-3.5 text-white/80 shrink-0" />
+                      ) : null}
+                    </>
+                  );
+
+                  const commonClasses = `w-full flex items-center ${
+                    isCollapsed ? "justify-center px-0 py-2.5" : "justify-between px-3 py-2.5"
+                  } rounded-xl transition-all cursor-pointer ${
+                    isActive
+                      ? "bg-secondary text-white shadow-xs font-bold"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  } ${sub.disabled ? "opacity-40 cursor-not-allowed" : ""}`;
+
+                  if (sub.href) {
+                    return (
+                      <Link
+                        key={sub.id}
+                        href={sub.href}
+                        title={sub.label}
+                        onClick={() => {
+                          if (sub.onClick) sub.onClick();
+                          setMobileMenuOpen(false);
+                        }}
+                        className={commonClasses}
+                      >
+                        {buttonContent}
+                      </Link>
+                    );
+                  }
+
+                  return (
+                    <button
+                      key={sub.id}
+                      type="button"
+                      title={sub.label}
+                      disabled={sub.disabled}
+                      onClick={() => handleSelectSubTab(group, sub)}
+                      className={commonClasses}
+                    >
+                      {buttonContent}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          )}
-        </aside>
+          ))}
+        </nav>
 
-        {/* ── Right Content Area (8 cols on lg) ── */}
-        <main className="lg:col-span-8 xl:col-span-9 flex flex-col space-y-6">
-          {/* Top Content Title Bar & Actions */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-xs font-medium text-gray-400">
+        {/* Sidebar Footer (Aksi cepat / Log) */}
+        {sidebarFooter && !isCollapsed && (
+          <div className="p-4 border-t border-slate-100 shrink-0 flex flex-col gap-2">
+            {sidebarFooter}
+          </div>
+        )}
+      </aside>
+
+      {/* ── Main Full-Screen Content Area ── */}
+      <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden bg-slate-50">
+        {/* Top Navbar Header inside Dashboard */}
+        <header className="h-16 bg-white border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 shrink-0 shadow-2xs z-10">
+          <div className="flex items-center gap-3 min-w-0">
+            {/* Mobile Menu Button */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              className="lg:hidden p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
+            {/* Breadcrumb info */}
+            <div className="min-w-0 space-y-0.5">
+              <div className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                 <span>{currentGroup?.label}</span>
                 <span>/</span>
-                <span className="font-semibold text-gray-700">
-                  {currentSub?.label}
-                </span>
+                <span className="text-secondary">{currentSub?.label}</span>
               </div>
-              <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">
+              <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight truncate">
                 {currentSub?.label}
-              </h1>
+              </h2>
             </div>
-
-            {actions && <div className="flex items-center gap-2">{actions}</div>}
           </div>
 
-          {/* Active Tab Content Panel */}
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-            {currentSub?.content || currentGroup?.content || (
-              <div className="p-8 text-center text-gray-400 bg-white rounded-2xl border border-gray-100">
-                Pilih menu di sidebar sebelah kiri untuk melihat konten.
-              </div>
-            )}
+          {/* Action buttons on the right of top bar */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            {actions}
+          </div>
+        </header>
+
+        {/* Scrollable Content Body */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scrollbar-thin scrollbar-thumb-slate-200">
+          <div className="max-w-7xl mx-auto space-y-6">
+            {topHeader && <div className="w-full">{topHeader}</div>}
+
+            {/* Active Content */}
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+              {currentSub?.content || currentGroup?.content || (
+                <div className="p-12 text-center text-slate-400 bg-white rounded-3xl border border-slate-100">
+                  Pilih menu di sidebar sebelah kiri untuk melihat konten.
+                </div>
+              )}
+            </div>
           </div>
         </main>
       </div>
