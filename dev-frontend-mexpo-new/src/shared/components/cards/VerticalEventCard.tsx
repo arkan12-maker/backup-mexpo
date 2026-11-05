@@ -4,7 +4,6 @@ import { Calendar, MapPin } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { useRouter } from 'next/navigation'
 import { getEventCategory, validateEventRegistration } from '@/shared/utils/validateEventCategory'
 import { dateFormat } from '@/shared/utils/format'
 import { Event } from '@/entities/event/event.entity'
@@ -16,35 +15,36 @@ const ctaClass = 'block bg-secondary group-hover:bg-white px-5 py-2.5 rounded-xl
 
 
 const VerticalEventCard = ({ event }: { event: Event }) => {
-  const router = useRouter()
   const eventCategory = getEventCategory(event.start_date, event.end_date)
   const regStatus = validateEventRegistration(event.registration_start, event.registration_deadline)
   const ctaLabel = getCtaLabel(eventCategory, regStatus.canRegister)
   const href = `/event/${event.slug ?? event.uuid}`
 
   return (
-    // ✅ motion.div — tidak ada nested <a>
     <motion.div
-      onClick={() => router.push(href)}
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 15 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.5, ease: 'easeOut' }}
-      className='group relative flex flex-col bg-white hover:bg-secondary shadow-sm hover:shadow-2xl border border-gray-100 hover:border-secondary rounded-2xl h-full overflow-hidden transition-all duration-300 cursor-pointer'
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+      className='group relative flex flex-col bg-white hover:bg-secondary shadow-sm hover:shadow-2xl border border-gray-100 hover:border-secondary rounded-2xl h-full overflow-hidden transition-all duration-300'
     >
+      {/* Full card clickable link for crawlers & accessibility */}
+      <Link href={href} className='absolute inset-0 z-10' aria-label={`Detail event ${event.name}`} />
+
       {/* Image */}
       <div className='relative w-full h-48 sm:h-52 overflow-hidden'>
         <Image
           src={event.photo || '/images/cards/card-e.png'}
           alt={event.name}
           fill
+          sizes='(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px'
           className='object-cover group-hover:scale-105 transition-transform duration-500 ease-out'
         />
         <div className='absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300' />
       </div>
 
       {/* Content */}
-      <div className='flex flex-col flex-grow p-5'>
+      <div className='flex flex-col flex-grow p-5 pointer-events-none'>
         <h3 className='mb-4 font-semibold text-gray-900 group-hover:text-white text-base sm:text-lg line-clamp-2 leading-snug transition-colors duration-300'>
           {event.name}
         </h3>
@@ -60,12 +60,11 @@ const VerticalEventCard = ({ event }: { event: Event }) => {
           </div>
         </div>
 
-        {/* ✅ CTA — Link tidak nested dalam <a> lagi */}
-        <div className='mt-auto'>
+        {/* CTA */}
+        <div className='mt-auto pointer-events-auto relative z-20'>
           {ctaLabel ? (
             <Link
               href={href}
-              onClick={(e) => e.stopPropagation()} // ✅ cegah double navigate
               className={ctaClass}
             >
               {ctaLabel}

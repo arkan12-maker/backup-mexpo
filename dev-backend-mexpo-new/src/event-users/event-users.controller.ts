@@ -145,4 +145,3 @@ export class EventUsersController {
     return this.eventUsersService.remove(id, request.user.uuid);
   }
 }
-

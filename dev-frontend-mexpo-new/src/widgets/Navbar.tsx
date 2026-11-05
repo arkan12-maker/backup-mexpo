@@ -137,7 +137,7 @@ export default function Navbar() {
               >
                 <Link href="/">
                   <Image
-                    src="/images/logo/logo-m.svg"
+                    src="/logo/logo.png"
                     alt="Mexpo"
                     width={72}
                     height={32}
@@ -288,6 +288,17 @@ export default function Navbar() {
                         </div>
                       </div>
                     </div>
+
+                    {userRole === 'SUPERADMIN' && (
+                      <Link
+                        href="/dashboard"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="flex items-center gap-2.5 hover:bg-secondary/5 dark:hover:bg-secondary/10 px-4 py-2.5 w-full text-left text-gray-700 dark:text-gray-300 hover:text-secondary text-sm transition-colors"
+                      >
+                        <ShieldCheck size={15} className="text-secondary" />
+                        Command Center
+                      </Link>
+                    )}
 
                     <button
                       type="button"

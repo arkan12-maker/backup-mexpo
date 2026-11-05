@@ -1,72 +1,94 @@
 import React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, CalendarPlus } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Button from "@/shared/components/button/Button";
 
-/**
- * About page hero — full-width banner (per layout reference):
- * big 2-line bold headline + short supporting text + visual as background.
- * Uses the brand blue (`secondary`/`brand-500`) for accents and the site's
- * standard `card-e.png` hero visual to stay consistent with the rest of the
- * public site. Stacks vertically on mobile by default (text over image).
- */
-const Hero = () => {
-  return (
-    <section className="relative mt-0 lg:mt-10">
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
-        className="relative flex flex-col"
-      >
-        {/* Background visual - absolute to fill container */}
-        <div className="absolute inset-0 rounded-2xl overflow-hidden">
-          <Image
-            src="/images/carousel/carousel-01.png"
-            alt="Suasana event dan expo yang dikelola MEXPO"
-            fill
-            priority
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-gray-900/85 via-gray-900/60 to-transparent" />
-        </div>
+interface HeroProps {
+  data?: {
+    tagline?: string;
+    headline?: string;
+    highlightText?: string;
+    description?: string;
+    backgroundImage?: string;
+  };
+}
 
-        {/* Content - relative to dictate height */}
-        <div className="relative flex flex-col justify-center gap-4 sm:gap-5 px-5 sm:px-8 lg:px-14 py-12 md:py-16 lg:py-20 max-w-7xl text-left text-white min-h-[320px] md:min-h-[384px]">
-          <p className="font-jakarta text-xs sm:text-sm md:text-base text-white/85">
-            Platform Manajemen Event &amp; Expo
-          </p>
-          <h1 className="font-public-sans font-extrabold text-3xl sm:text-5xl md:text-6xl leading-tight">
-            Kelola Event &amp; Expo <span className="text-secondary">Jadi Mudah</span>
-            <br />
-            dengan Satu Platform Terintegrasi
+const Hero: React.FC<HeroProps> = ({ data }) => {
+  const tagline = data?.tagline || "Tentang Mexpo";
+  const headline = data?.headline || "Platform Event & Expo untuk Masa Depan";
+  const highlightText = data?.highlightText || "Indonesia";
+  const description =
+    data?.description ||
+    "Mexpo hadir sebagai solusi digital untuk mengelola dan menemukan berbagai event dan expo di seluruh Indonesia, lebih mudah, lebih terintegrasi.";
+  const heroImage = data?.backgroundImage || "/images/about/about-hero.png";
+
+  return (
+    <section className="relative pt-2 pb-12 sm:pb-16 lg:pb-20 overflow-hidden">
+    
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center relative z-10">
+        {/* Left Column: Text & CTAs */}
+        <motion.div
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6 }}
+          className="lg:col-span-5 space-y-5 text-left"
+        >
+          {/* Badge */}
+          <span className="inline-flex items-center gap-1.5 bg-blue-50 text-secondary border border-blue-100 px-4 py-1.5 rounded-full text-xs font-bold tracking-wide">
+            {tagline}
+          </span>
+
+          {/* Heading */}
+          <h1 className="font-public-sans font-extrabold text-3xl sm:text-4xl lg:text-5xl text-gray-900 leading-[1.15] tracking-tight">
+            {headline} <span className="text-secondary">{highlightText}</span>
           </h1>
-          <p className="font-jakarta text-gray-100 text-sm sm:text-base md:text-lg leading-relaxed max-w-xl">
-            MEXPO menyatukan pendaftaran, check-in QR, workshop, tenant/POS,
-            sertifikat digital, hingga laporan dalam satu sistem — cepat, akurat,
-            dan siap dipakai di event apa pun.
+
+          {/* Description */}
+          <p className="font-jakarta text-gray-600 text-sm sm:text-base leading-relaxed max-w-xl">
+            {description}
           </p>
-          <div className="flex flex-wrap gap-3 pt-1">
-            <Button
-              href="/dashboard/create"
-              startIcon={<CalendarPlus className="w-4 h-4" />}
-              className="bg-secondary text-white hover:bg-secondary/85"
-            >
-              Buat Event
-            </Button>
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap items-center gap-3 pt-2">
             <Button
               href="/"
-              variant="secondary"
+              variant="primary"
               endIcon={<ArrowRight className="w-4 h-4" />}
-              className="border border-white/40"
+              className="px-6 py-3 text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all"
             >
               Jelajahi Event
             </Button>
+            <Link
+              href="/contact"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs sm:text-sm font-bold transition-all shadow-sm"
+            >
+              Hubungi Kami
+            </Link>
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
+
+        {/* Right Column: Hero Illustration Artwork */}
+        <motion.div
+          initial={{ opacity: 0, x: 30, scale: 0.95 }}
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          transition={{ duration: 0.7, delay: 0.1 }}
+          className="lg:col-span-7 flex justify-center items-center relative"
+        >
+          <div className="relative w-full max-w-[580px] aspect-[16/10] sm:aspect-[16/9] lg:aspect-[16/10] drop-shadow-2xl">
+            <Image
+              src={heroImage}
+              alt="Mexpo Event Platform Showcase"
+              fill
+              priority
+              sizes="(min-width: 1024px) 580px, 100vw"
+              className="object-contain"
+            />
+          </div>
+        </motion.div>
+      </div>
     </section>
   );
 };

@@ -36,7 +36,17 @@ const EVENT_TYPE_FILTERS: EventType[] = [
   "OTHER",
 ];
 
-export default function EventList() {
+interface EventListProps {
+  hideHero?: boolean;
+  title?: string;
+  subtitle?: string;
+}
+
+export default function EventList({
+  hideHero = false,
+  title = "Dasbor Event",
+  subtitle = "Kelola dan pantau semua event Anda dalam satu tempat",
+}: EventListProps = {}) {
   const user = useAuthStore((s) => s.user);
   const isSuperAdmin = user?.role === "SUPERADMIN";
 
@@ -61,56 +71,62 @@ export default function EventList() {
   const handlePhotoUpdated = () => list.refetch();
 
   return (
-    <div className="pb-20">
-      {/* ── Hero ── */}
-      <HeroBanner>
-        <h1 className="font-extrabold text-4xl sm:text-5xl md:text-6xl leading-tight">
-          Event Saya
-        </h1>
-        {/* Tombol create untuk semua user yang sudah login */}
-        <Link
-          href="/dashboard/create"
-          className="inline-flex items-center gap-2 bg-white text-secondary font-semibold text-sm px-5 py-2.5 rounded-xl hover:scale-[1.02] active:scale-95 transition-all duration-200 shadow-md"
-        >
-          <Plus className="w-4 h-4" />
-          Buat Event
-        </Link>
+    <div className={hideHero ? "space-y-4" : "pb-20"}>
+      {/* ── Hero (hanya jika hideHero false) ── */}
+      {!hideHero && (
+        <HeroBanner>
+          <h1 className="font-extrabold text-4xl sm:text-5xl md:text-6xl leading-tight">
+            Event Saya
+          </h1>
+          {/* Tombol create untuk semua user yang sudah login */}
+          <Link
+            href="/dashboard/create"
+            className="inline-flex items-center gap-2 bg-white text-secondary font-semibold text-sm px-5 py-2.5 rounded-xl hover:scale-[1.02] active:scale-95 transition-all duration-200 shadow-md"
+          >
+            <Plus className="w-4 h-4" />
+            Buat Event
+          </Link>
 
-        {/* Link admin hanya untuk SUPERADMIN */}
-        {isSuperAdmin && (
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <Link
-              href="/dashboard/approvals"
-              className="inline-flex items-center gap-2 bg-white/95 text-secondary font-semibold text-sm px-5 py-2.5 rounded-xl hover:scale-[1.02] active:scale-95 transition-all duration-200 shadow-md"
-            >
-              <ShieldCheck className="w-4 h-4" />
-              Persetujuan
-            </Link>
-            <Link
-              href="/dashboard/users"
-              className="inline-flex items-center gap-2 bg-white/95 text-secondary font-semibold text-sm px-5 py-2.5 rounded-xl hover:scale-[1.02] active:scale-95 transition-all duration-200 shadow-md"
-            >
-              <Users className="w-4 h-4" />
-              Manajemen Pengguna
-            </Link>
-            <Link
-              href="/dashboard/settlements"
-              className="inline-flex items-center gap-2 bg-white/95 text-secondary font-semibold text-sm px-5 py-2.5 rounded-xl hover:scale-[1.02] active:scale-95 transition-all duration-200 shadow-md"
-            >
-              <Wallet className="w-4 h-4" />
-              Settlement
-            </Link>
-          </div>
-        )}
-      </HeroBanner>
+          {/* Link admin hanya untuk SUPERADMIN */}
+          {isSuperAdmin && (
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href="/dashboard/approvals"
+                className="inline-flex items-center gap-2 bg-white/95 text-secondary font-semibold text-sm px-5 py-2.5 rounded-xl hover:scale-[1.02] active:scale-95 transition-all duration-200 shadow-md"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                Persetujuan
+              </Link>
+              <Link
+                href="/dashboard/users"
+                className="inline-flex items-center gap-2 bg-white/95 text-secondary font-semibold text-sm px-5 py-2.5 rounded-xl hover:scale-[1.02] active:scale-95 transition-all duration-200 shadow-md"
+              >
+                <Users className="w-4 h-4" />
+                Manajemen Pengguna
+              </Link>
+              <Link
+                href="/dashboard/settlements"
+                className="inline-flex items-center gap-2 bg-white/95 text-secondary font-semibold text-sm px-5 py-2.5 rounded-xl hover:scale-[1.02] active:scale-95 transition-all duration-200 shadow-md"
+              >
+                <Wallet className="w-4 h-4" />
+                Settlement
+              </Link>
+            </div>
+          )}
+        </HeroBanner>
+      )}
 
       {/* ── Content ── */}
-      <div className="bg-white rounded-2xl px-4 sm:px-6 lg:px-8 py-8">
+      <div
+        className={
+          hideHero
+            ? "bg-white rounded-2xl border border-gray-100 shadow-sm px-4 sm:px-6 lg:px-8 py-8"
+            : "bg-white rounded-2xl px-4 sm:px-6 lg:px-8 py-8"
+        }
+      >
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900">Dasbor Event</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Kelola dan pantau semua event Anda dalam satu tempat
-          </p>
+          <h2 className="text-xl font-bold text-gray-900">{title}</h2>
+          <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
         </div>
 
         <div className="space-y-3">

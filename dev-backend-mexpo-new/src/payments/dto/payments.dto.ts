@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { IsBoolean, IsInt, IsOptional, IsString, Min } from 'class-validator';
 
 export class CheckoutDto {
   /** Optional: required only when the visitor has no ticket yet. */
@@ -20,6 +20,15 @@ export class UpdatePayoutDto {
   @IsOptional()
   @IsString()
   payout_account_holder?: string;
+
+  /** True when committee officially opens / requests settlement from superadmin */
+  @IsOptional()
+  @IsBoolean()
+  request_settlement?: boolean;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
 }
 
 export class SettleDto {

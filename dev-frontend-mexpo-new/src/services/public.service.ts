@@ -26,7 +26,7 @@ export async function getEvents(query?: PublicEventsQuery) {
   const res = await httpGet(
     "public-api/events",
     "Basic",
-    { cache: "no-store" },
+    META_ISR(60),
     params,
   );
 
@@ -54,12 +54,15 @@ export async function getEvents(query?: PublicEventsQuery) {
     message: res.message,
   };
 }
-export async function getMyEvents(query?: QueryEntity & { search?: string }) {
-
+export async function getMyEvents(query?: Record<string, string | number | undefined>) {
     const params: Record<string, string> = {};
-    if (query?.page != null) params.page = String(query.page);
-    if (query?.quantity != null) params.quantity = String(query.quantity);
-    if (query?.search) params.search = query.search;
+    if (query) {
+      for (const [k, v] of Object.entries(query)) {
+        if (v != null && v !== "") {
+          params[k] = String(v);
+        }
+      }
+    }
 
     const res = await httpGet(
         "events/me",
@@ -76,7 +79,7 @@ export async function getMyEvents(query?: QueryEntity & { search?: string }) {
             count: meta?.count,
             page: meta?.page,
         },
-        data: res.data as Event[],
+        data: (res.data as Event[]) ?? [],
         status: res.status,
         code: res.code,
         message: res.message

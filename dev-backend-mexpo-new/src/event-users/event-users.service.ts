@@ -45,7 +45,6 @@ export class EventUsersService {
     createEventUserDto?: CreateEventUserDto,
     role?: EventRole,
   ) {
-
     try {
       const findEvent = await this.prisma.events.findFirst({
         where: { uuid: event_id },
@@ -410,7 +409,6 @@ export class EventUsersService {
         message: `Event user has updated successfully`,
         data: updateEventUser,
       };
-
     } catch (error) {
       console.log(error);
       if (error instanceof HttpException) {
@@ -835,4 +833,3 @@ export class EventUsersService {
     }
   }
 }
-

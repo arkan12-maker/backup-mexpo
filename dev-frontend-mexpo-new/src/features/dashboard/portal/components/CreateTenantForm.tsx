@@ -2,6 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Loader2, Upload } from "lucide-react";
 import Input from "@/shared/components/form/Input";
+import PhoneInput from "@/shared/components/form/PhoneInput";
 import Image from "next/image";
 import { useApiMutation, useApiQuery } from "@/lib/hooks/useApi";
 import { createTenant, TenantProfilePayload } from "@/services/tenant.service";
@@ -118,10 +119,16 @@ export function CreateTenantForm({ eventId, onSuccess }: { eventId: string; onSu
           ))}
         </select>
       </div>
-      <div className="gap-3 grid grid-cols-1 sm:grid-cols-2">
-        <Input label="Telepon" required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-        <Input label="Nomor Booth" value={form.booth_number} onChange={(e) => setForm({ ...form, booth_number: e.target.value })} />
-        <Input label="Website" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} />
+      <div className="gap-4 grid grid-cols-1 sm:grid-cols-2">
+        <PhoneInput
+          label="Nomor Telepon"
+          required
+          value={form.phone}
+          onChange={(val) => setForm({ ...form, phone: val })}
+          hint="Format: 0812-3456-7890"
+        />
+        <Input label="Nomor Booth" value={form.booth_number} onChange={(e) => setForm({ ...form, booth_number: e.target.value })} placeholder="Contoh: A-12" />
+        <Input label="Website" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="https://..." />
         <Input label="Email" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
       </div>
       <button type="submit" disabled={create.isPending} className="flex items-center justify-center gap-2 bg-secondary hover:bg-secondary/80 disabled:opacity-50 px-5 py-3.5 rounded-lg font-semibold text-white transition-colors w-full sm:w-auto">

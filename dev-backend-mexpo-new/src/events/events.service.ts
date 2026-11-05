@@ -163,13 +163,16 @@ export class EventsService {
               },
             }
           : undefined,
-        OR: [
-          { name: { contains: search ?? `` } },
-          { description: { contains: search ?? `` } },
-          { organizer_name: { contains: search ?? `` } },
-          { location: { contains: search ?? `` } },
-          { creator: { full_name: { contains: search ?? `` } } },
-        ],
+        OR:
+          search && search.trim() !== ''
+            ? [
+                { name: { contains: search } },
+                { description: { contains: search } },
+                { organizer_name: { contains: search } },
+                { location: { contains: search } },
+                { creator: { full_name: { contains: search } } },
+              ]
+            : undefined,
       };
 
       const counts = await this.prisma.events.count({ where });
@@ -238,7 +241,13 @@ export class EventsService {
           },
           eventContacts: true,
           eventRundowns: { include: { eventRundownSpeakers: true } },
-          eventSpeakers: { where: { status: `APPROVED` } },
+          eventSpeakers: {
+            where: { status: `APPROVED` },
+            include: {
+              workshopSpeakers: { include: { workshop: true } },
+              eventRundownSpeakers: { include: { event_rundown: true } },
+            },
+          },
           eventSponsors: true,
           tenants: {
             where: { status: `APPROVED` },
@@ -759,5 +768,102 @@ export class EventsService {
       }
       throw new InternalServerErrorException(`Something were wrong. ${error}`);
     }
+  }
+
+  async getSuperAdminOverview() {
+    const [
+      totalEvents,
+      draftedEvents,
+      pendingEvents,
+      publishedEvents,
+      rejectedEvents,
+      finishedEvents,
+      totalUsers,
+      superadminUsers,
+      regularUsers,
+      paidTransactionsAggregate,
+      pendingSettlementsCount,
+      unreadInquiriesCount,
+      totalInquiriesCount,
+      recentPendingEvents,
+      recentInquiries,
+    ] = await Promise.all([
+      this.prisma.events.count(),
+      this.prisma.events.count({ where: { status: 'DRAFTED' } }),
+      this.prisma.events.count({ where: { status: 'PENDING' } }),
+      this.prisma.events.count({ where: { status: 'PUBLISHED' } }),
+      this.prisma.events.count({ where: { status: 'REJECTED' } }),
+      this.prisma.events.count({ where: { status: 'FINISHED' } }),
+      this.prisma.users.count(),
+      this.prisma.users.count({ where: { role: 'SUPERADMIN' } }),
+      this.prisma.users.count({ where: { role: 'USER' } }),
+      this.prisma.transactions.aggregate({
+        where: { status: 'PAID' },
+        _count: { uuid: true },
+        _sum: { amount: true, platform_fee: true },
+      }),
+      this.prisma.events.count({
+        where: {
+          ticket_mode: 'PAID',
+          payout_status: 'NOT_SETTLED',
+          status: { in: ['PUBLISHED', 'FINISHED'] },
+          payout_account_number: { not: '' },
+          features: { path: ['settlement_requested'], equals: true },
+        },
+      }),
+      this.prisma.contact_message.count({
+        where: { status: 'UNREAD' },
+      }),
+      this.prisma.contact_message.count(),
+      this.prisma.events.findMany({
+        where: { status: 'PENDING' },
+        take: 5,
+        orderBy: { updated_at: 'desc' },
+        include: {
+          creator: { select: { uuid: true, full_name: true, email: true } },
+        },
+      }),
+      this.prisma.contact_message.findMany({
+        take: 5,
+        orderBy: { created_at: 'desc' },
+      }),
+    ]);
+
+    return {
+      status: true,
+      data: {
+        events: {
+          total: totalEvents,
+          drafted: draftedEvents,
+          pending: pendingEvents,
+          published: publishedEvents,
+          rejected: rejectedEvents,
+          finished: finishedEvents,
+        },
+        users: {
+          total: totalUsers,
+          superadmins: superadminUsers,
+          regular: regularUsers,
+        },
+        financials: {
+          totalTransactions: paidTransactionsAggregate._count.uuid ?? 0,
+          grossVolume: paidTransactionsAggregate._sum.amount ?? 0,
+          platformFee: paidTransactionsAggregate._sum.platform_fee ?? 0,
+          pendingSettlements: pendingSettlementsCount,
+        },
+        inquiries: {
+          total: totalInquiriesCount,
+          unread: unreadInquiriesCount,
+        },
+        actionsNeeded: {
+          pendingApprovals: pendingEvents,
+          pendingSettlements: pendingSettlementsCount,
+          unreadInquiries: unreadInquiriesCount,
+          total: pendingEvents + pendingSettlementsCount + unreadInquiriesCount,
+        },
+        recentPendingEvents,
+        recentInquiries,
+      },
+    };
   }
 }

@@ -1,92 +1,50 @@
 "use client";
 
+import React from "react";
 import { motion } from "framer-motion";
-
 import PageShell from "@/shared/components/ui/PageShell";
 import Hero from "./content/Hero";
 import AboutDescription from "./content/AboutDescription";
 import Gallery from "./content/Gallery";
 import { CoreFeature } from "./content/CoreFeature";
 import CoreValue from "./content/CoreValue";
-
-
-import { QrCode, BarChart3, Users, Zap } from "lucide-react";
-
-const features = [
-  {
-    icon: <QrCode className="w-5 h-5" />,
-    title: "Check-in QR",
-    description:
-      "Menggantikan daftar kertas dan antrean lambat dengan check-in QR instan untuk pintu masuk yang mulus.",
-  },
-  {
-    icon: <BarChart3 className="w-5 h-5" />,
-    title: "Analitik Waktu Nyata",
-    description:
-      "Data kehadiran dan transaksi tampil langsung, membantu panitia mengoptimalkan jalannya acara.",
-  },
-  {
-    icon: <Users className="w-5 h-5" />,
-    title: "Manajemen Peserta",
-    description:
-      "Database terpusat untuk seluruh informasi peserta, preferensi, dan komunikasi.",
-  },
-  {
-    icon: <Zap className="w-5 h-5" />,
-    title: "Penyiapan Cepat",
-    description:
-      "Peluncuran event dalam hitungan menit, bukan hari — siap dipakai tim mana pun.",
-  },
-];
-
-const coreValues = [
-  {
-    icon: QrCode,
-    title: "Andal",
-    description: "Sistem yang tetap stabil saat tekanan tertinggi.",
-  },
-  {
-    icon: BarChart3,
-    title: "Inovatif",
-    description: "Terus menyempurnakan alur kerja penyelenggaraan.",
-  },
-  {
-    icon: Users,
-    title: "Transparan",
-    description: "Data peserta terlindungi dan tercatat jelas.",
-  },
-  {
-    icon: Zap,
-    title: "Efisien",
-    description: "Meminimalkan langkah untuk kecepatan operasional.",
-  },
-];
+import { useApiQuery } from "@/lib/hooks/useApi";
+import { keys } from "@/lib/query-keys";
+import { getAllSiteContents } from "@/services/site-content.service";
 
 const About = () => {
+  const { data: contentsResponse } = useApiQuery(
+    keys.siteContents.all,
+    () => getAllSiteContents(),
+    {
+      staleTime: 60 * 1000,
+    },
+  );
+
+  const siteData = contentsResponse?.data || {};
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className="min-h-screen"
+      className="min-h-screen bg-white"
     >
-      <PageShell className="py-8">
-        {/* ─── 1. Hero banner full-width ─── */}
-        <Hero />
+      <PageShell className="py-6 sm:py-8 space-y-12 sm:space-y-16">
+        {/* ─── 1. Hero Showcase (Reference Image Section 1) ─── */}
+        <Hero data={siteData.about_hero} />
 
-        {/* ─── 2. Deskripsi + panel statistik ─── */}
-        <AboutDescription />
+        {/* ─── 2. Ekosistem Event & Statistik (Reference Image Section 2) ─── */}
+        <AboutDescription data={siteData.about_story} />
 
-        {/* ─── 3. Galeri / showcase ─── */}
-        <Gallery />
+        {/* ─── 3. Galeri Momen Berharga 5-Foto (Reference Image Section 3) ─── */}
+        <Gallery data={siteData.about_gallery} />
 
-        {/* ─── Fitur inti ─── */}
-        <CoreFeature feature={features} />
+        {/* ─── 4. Solusi Lengkap untuk Dunia Event (Reference Image Section 4) ─── */}
+        <CoreFeature />
 
-        {/* ─── Nilai inti ─── */}
-        <CoreValue coreValues={coreValues} />
-
-     
+        {/* ─── 5. Visi & Misi Container (Reference Image Section 5) ─── */}
+        <CoreValue data={siteData.about_values} />
       </PageShell>
     </motion.div>
   );

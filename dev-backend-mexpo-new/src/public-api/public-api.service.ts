@@ -307,7 +307,13 @@ export class PublicApiService {
           },
           eventContacts: true,
           eventRundowns: { include: { eventRundownSpeakers: true } },
-          eventSpeakers: true,
+          eventSpeakers: {
+            where: { status: `APPROVED` },
+            include: {
+              workshopSpeakers: { include: { workshop: true } },
+              eventRundownSpeakers: { include: { event_rundown: true } },
+            },
+          },
           eventSponsors: true,
           tenants: { include: { tenantProducts: true, category: true } },
         },
@@ -355,7 +361,13 @@ export class PublicApiService {
           },
           eventContacts: true,
           eventRundowns: { include: { eventRundownSpeakers: true } },
-          eventSpeakers: true,
+          eventSpeakers: {
+            where: { status: `APPROVED` },
+            include: {
+              workshopSpeakers: { include: { workshop: true } },
+              eventRundownSpeakers: { include: { event_rundown: true } },
+            },
+          },
           eventSponsors: true,
           tenants: { include: { tenantProducts: true, category: true } },
         },
@@ -540,9 +552,28 @@ export class PublicApiService {
         answers,
       } = createUserDto;
 
-      const isPaid =
-        findEvent.ticket_mode === `PAID` ||
-        (findEvent.features as { paidTicket?: boolean })?.paidTicket === true;
+      // Determine target ticket type (if any)
+      let targetTicketType: {
+        uuid: string;
+        price: number;
+        name: string;
+      } | null = null;
+      if (
+        findEvent.ticket_mode === `PAID` &&
+        (findEvent.features as { paidTicket?: boolean })?.paidTicket !== false
+      ) {
+        targetTicketType = ticket_type_id
+          ? await this.prisma.ticket_types.findFirst({
+              where: { uuid: ticket_type_id, event_id },
+            })
+          : await this.prisma.ticket_types.findFirst({
+              where: { event_id },
+              orderBy: { price: `asc` },
+            });
+      }
+
+      // An event is only paid if ticket_mode is PAID AND the chosen ticket type has price > 0.
+      const isPaid = Boolean(targetTicketType && targetTicketType.price > 0);
       const initialRoleStatus =
         isPaid && !payment_reference ? `PENDING` : `APPROVED`;
 
@@ -705,51 +736,54 @@ export class PublicApiService {
           status: { not: `CANCELLED` },
         },
       });
-      if (isPaid) {
-        const type = ticket_type_id
-          ? await this.prisma.ticket_types.findFirst({
-              where: { uuid: ticket_type_id, event_id },
-            })
-          : await this.prisma.ticket_types.findFirst({
-              where: { event_id },
-              orderBy: { price: `asc` },
-            });
-        if (type) {
-          if (existingTicket) {
-            await this.prisma.tickets.update({
-              where: { uuid: existingTicket.uuid },
-              data: {
-                ticket_type_id: type.uuid,
-                payment_reference:
-                  payment_reference ?? existingTicket.payment_reference,
-                payment_method: payment_method ?? existingTicket.payment_method,
-                status: payment_reference ? `PAID` : existingTicket.status,
-                updated_by: findSuperAdmin.uuid,
-              },
-            });
-          } else {
-            await this.prisma.tickets.create({
-              data: {
-                event_id,
-                user_id: visitorUserId,
-                ticket_type_id: type.uuid,
-                payment_reference: payment_reference ?? ``,
-                payment_method: payment_method ?? ``,
-                status: payment_reference ? `PAID` : `RESERVED`,
-                created_by: findSuperAdmin.uuid,
-                updated_by: findSuperAdmin.uuid,
-              },
-            });
-          }
+      if (isPaid && targetTicketType) {
+        const type = targetTicketType;
+        if (existingTicket) {
+          await this.prisma.tickets.update({
+            where: { uuid: existingTicket.uuid },
+            data: {
+              ticket_type_id: type.uuid,
+              payment_reference:
+                payment_reference ?? existingTicket.payment_reference,
+              payment_method: payment_method ?? existingTicket.payment_method,
+              status: payment_reference ? `PAID` : existingTicket.status,
+              updated_by: findSuperAdmin.uuid,
+            },
+          });
+        } else {
+          await this.prisma.tickets.create({
+            data: {
+              event_id,
+              user_id: visitorUserId,
+              ticket_type_id: type.uuid,
+              payment_reference: payment_reference ?? ``,
+              payment_method: payment_method ?? ``,
+              status: payment_reference ? `PAID` : `RESERVED`,
+              created_by: findSuperAdmin.uuid,
+              updated_by: findSuperAdmin.uuid,
+            },
+          });
         }
       } else if (!existingTicket) {
+        // Free ticket or free event: ticket is immediately active/PAID
         await this.prisma.tickets.create({
           data: {
             event_id,
             user_id: visitorUserId,
-            ticket_type_id: null,
+            ticket_type_id: targetTicketType ? targetTicketType.uuid : null,
             status: `PAID`,
             created_by: findSuperAdmin.uuid,
+            updated_by: findSuperAdmin.uuid,
+          },
+        });
+      } else {
+        await this.prisma.tickets.update({
+          where: { uuid: existingTicket.uuid },
+          data: {
+            ticket_type_id: targetTicketType
+              ? targetTicketType.uuid
+              : existingTicket.ticket_type_id,
+            status: `PAID`,
             updated_by: findSuperAdmin.uuid,
           },
         });
@@ -770,7 +804,7 @@ export class PublicApiService {
           },
           include: { ticket_type: true },
         });
-        if (ticket?.ticket_type) {
+        if (ticket?.ticket_type && ticket.ticket_type.price > 0) {
           try {
             payment = await this.paymentsService.createPaymentForTicket({
               eventId: event_id,
@@ -873,7 +907,6 @@ export class PublicApiService {
       } catch (err) {
         console.error(`Error building ticket email for ${email}:`, err);
       }
-
 
       // ── Webhook integration notification ──
       const integrationConfig = (

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Loader2, Plus, Upload } from "lucide-react";
 import Input from "@/shared/components/form/Input";
+import CurrencyInput from "@/shared/components/form/CurrencyInput";
 import SearchBar from "@/shared/components/form/SearchBar";
 import Image from "next/image";
 import { DataPagination } from "@/shared/components/ui/DataPagination";
@@ -167,9 +168,15 @@ export function ProductsTab({ tenantId }: { tenantId: string }) {
               </div>
             </div>
           </div>
-          <Input label="Nama" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <Input label="Nama Produk" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <Input label="Deskripsi" type="text-area" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-          <Input label="Harga (Rp)" type="number" min="0" required value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+          <CurrencyInput
+            label="Harga Produk"
+            required
+            value={Number(form.price) || 0}
+            onChange={(val) => setForm({ ...form, price: String(val) })}
+            hint="Masukkan nominal harga jual produk dalam Rupiah"
+          />
           <div className="flex gap-2 pt-2">
             <button type="submit" disabled={busy} className="flex items-center justify-center gap-2 bg-secondary hover:bg-secondary/80 disabled:opacity-50 px-5 py-2.5 rounded-lg font-semibold text-white transition-colors w-full sm:w-auto">
               {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}

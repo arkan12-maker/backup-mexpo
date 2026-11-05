@@ -113,4 +113,21 @@ export const keys = {
   platform: {
     stats: ["platform", "stats"] as const,
   },
+  adminOverview: ["admin", "overview"] as const,
+  inbox: {
+    all: ["inbox"] as const,
+    stats: ["inbox", "stats"] as const,
+    list: (query: Record<string, string>) => ["inbox", "list", query] as const,
+    detail: (uuid: string) => ["inbox", "detail", uuid] as const,
+  },
+  faqs: {
+    all: ["faqs"] as const,
+    publicList: (category?: string) => ["faqs", "public", category ?? ""] as const,
+    adminList: (query: Record<string, string>) => ["faqs", "admin", query] as const,
+    detail: (uuid: string) => ["faqs", "detail", uuid] as const,
+  },
+  siteContents: {
+    all: ["site-contents"] as const,
+    section: (key: string) => ["site-contents", key] as const,
+  },
 } as const;

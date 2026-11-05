@@ -65,7 +65,7 @@ export async function getSettlementSummary(eventId: string) {
 
 export async function updateEventPayout(
   eventId: string,
-  payload: Partial<EventPayoutInfo>,
+  payload: Partial<EventPayoutInfo> & { request_settlement?: boolean; notes?: string },
 ) {
   return await httpPut(
     `events/${eventId}/payout`,
@@ -73,6 +73,8 @@ export async function updateEventPayout(
       payout_bank_name: payload.bank_name,
       payout_account_number: payload.account_number,
       payout_account_holder: payload.account_holder,
+      request_settlement: payload.request_settlement,
+      notes: payload.notes,
     }),
     "token",
   );

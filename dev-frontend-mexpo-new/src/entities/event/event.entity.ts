@@ -36,6 +36,7 @@ export interface EventFeatures {
   product?: boolean;
   pos?: boolean;
   paidTicket?: boolean;
+  maps_embed_url?: string;
 }
 
 export type TicketMode = "FREE" | "PAID";
@@ -103,6 +104,11 @@ export interface Event {
     requireAll?: boolean;
   } | null;
   rejection_reason: string | null;
+  payout_bank_name?: string;
+  payout_account_number?: string;
+  payout_account_holder?: string;
+  payout_status?: "NOT_SETTLED" | "SETTLED";
+  settled_at?: string | null;
   photo: string;
   approved_by: string | null;
   created_by: string;

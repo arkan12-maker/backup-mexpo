@@ -1,11 +1,14 @@
 
+export const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.NODE_ENV === 'production'
+    ? 'https://dev-frontend-expo.4rk4n.dev'
+    : 'http://localhost:3000');
+
 export const BASE_DOMAIN =
   typeof window === 'undefined'
     ? (process.env.NEXT_PUBLIC_BASE_URL_DEVELOPMENT || "http://localhost:3500")
     : (process.env.NEXT_PUBLIC_BASE_URL_PRODUCTION || "https://mexpo-api.smktelkom-mlg.sch.id");
-// export const BASE_DOMAIN =
-//   process.env.NEXT_PUBLIC_BASE_URL_PRODUCTION ||
-//   "http://localhost:3000";
 export const BASE_API_URL = `${BASE_DOMAIN}`;
 
 export const BASIC_AUTH_USERNAME =

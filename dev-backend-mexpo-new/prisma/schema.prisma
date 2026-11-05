@@ -90,6 +90,10 @@ model users {
   creator_transactions          transactions[]             @relation("creator_transactions")
   editor_transactions           transactions[]             @relation("editor_transactions")
   settlementsTransferred        event_settlements[]        @relation("transfer_user_settlements")
+  repliedContactMessages        contact_message[]          @relation("replier_contact_messages")
+  creator_faqs                  faqs[]                     @relation("creator_faqs")
+  editor_faqs                   faqs[]                     @relation("editor_faqs")
+  editor_site_contents          site_contents[]            @relation("editor_site_contents")
 
   usersBio users_bio?
 }
@@ -736,15 +740,52 @@ model registration_answers {
 }
 
 // Public contact form submissions (`POST /contact`). Anonymous visitors — no
-// user FK / audit fields by design (the sender is NOT a users row).
+// user FK / audit fields for sender, but tracks handling status and staff replies.
+enum ContactStatus {
+  UNREAD
+  READ
+  REPLIED
+  ARCHIVED
+}
+
 model contact_message {
-  uuid       String   @id @default(uuid())
-  name       String   @default("")
-  email      String   @default("")
-  subject    String   @default("")
-  message    String   @db.Text
-  ip_address String   @default("")
-  created_at DateTime @default(now())
+  uuid          String        @id @default(uuid())
+  name          String        @default("")
+  email         String        @default("")
+  subject       String        @default("")
+  message       String        @db.Text
+  ip_address    String        @default("")
+  status        ContactStatus @default(UNREAD)
+  reply_message String?       @db.Text
+  replied_at    DateTime?
+  replied_by    String?
+  replier       users?        @relation("replier_contact_messages", fields: [replied_by], references: [uuid], onDelete: SetNull)
+  created_at    DateTime      @default(now())
+  updated_at    DateTime      @updatedAt
+}
+
+model faqs {
+  uuid         String   @id @default(uuid())
+  question     String   @default("")
+  answer       String   @db.Text
+  category     String   @default("Umum")
+  order        Int      @default(0)
+  is_published Boolean  @default(true)
+  created_by   String   @default("")
+  creator      users    @relation("creator_faqs", fields: [created_by], references: [uuid])
+  updated_by   String   @default("")
+  editor       users    @relation("editor_faqs", fields: [updated_by], references: [uuid])
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+}
+
+model site_contents {
+  uuid        String   @id @default(uuid())
+  section_key String   @unique
+  content     Json
+  updated_by  String?
+  editor      users?   @relation("editor_site_contents", fields: [updated_by], references: [uuid], onDelete: SetNull)
+  updated_at  DateTime @updatedAt
 }
 
 // Certificate templates (A10 upgrade) — designable by OWNER/COMMITTEE via the

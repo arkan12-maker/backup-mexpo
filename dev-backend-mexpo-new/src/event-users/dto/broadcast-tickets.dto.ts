@@ -3,7 +3,10 @@ import { EventRole, USER_EVENT_STATUS } from '@prisma/client';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class BroadcastTicketsDto {
-  @ApiPropertyOptional({ enum: USER_EVENT_STATUS, default: USER_EVENT_STATUS.APPROVED })
+  @ApiPropertyOptional({
+    enum: USER_EVENT_STATUS,
+    default: USER_EVENT_STATUS.APPROVED,
+  })
   @IsOptional()
   @IsEnum(USER_EVENT_STATUS)
   status?: USER_EVENT_STATUS;

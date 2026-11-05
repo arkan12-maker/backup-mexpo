@@ -1,10 +1,10 @@
-import EventList from '@/features/dashboard/dashboard/Eventlist'
-import React from 'react'
+import DashboardRouter from "@/features/dashboard/dashboard/DashboardRouter";
+import React from "react";
 
-const DashboardPage = () => {
-  return (
-    <EventList />
-  )
+export const metadata = {
+  title: "Dashboard",
+};
+
+export default function DashboardPage() {
+  return <DashboardRouter />;
 }
-
-export default DashboardPage

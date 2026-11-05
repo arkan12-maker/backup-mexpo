@@ -3,7 +3,6 @@
 import { motion } from 'framer-motion'
 import { Calendar, MapPin } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { Event } from '@/entities/event/event.entity'
 import { setCookies } from '@/shared/utils/cookies'
 import { getEventCategory, validateEventRegistration } from '@/shared/utils/validateEventCategory'
@@ -20,7 +19,6 @@ const btnBase =
 const btnDisabled = `${btnBase} bg-gray-100 text-gray-400 cursor-not-allowed opacity-80`
 
 const HorizontalEventCard = ({ event, variant }: HorizontalEventCardProps) => {
-  const router = useRouter()
   const eventCategory = getEventCategory(event.start_date, event.end_date)
 
 
@@ -36,8 +34,6 @@ const HorizontalEventCard = ({ event, variant }: HorizontalEventCardProps) => {
   const buttonLabel = getCtaLabel(eventCategory, registrationStatus.canRegister)
   const shouldSetCookie = registrationStatus.canRegister && eventCategory !== 'Past'
   const href = `/event/${event.slug ?? event.uuid}`
-
-  const handleCardClick = () => router.push(href)
 
   const cardBase =
     'group flex xl:flex-row flex-col justify-between items-center gap-4 px-5 py-5 rounded-2xl transition-all duration-300 cursor-pointer'
@@ -84,13 +80,14 @@ const HorizontalEventCard = ({ event, variant }: HorizontalEventCardProps) => {
 
   return (
     <motion.div
-      onClick={handleCardClick}
       initial={{ opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.5, ease: 'easeOut' }}
-      className={isPrimary ? primaryClass : secondaryClass}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+      className={`relative ${isPrimary ? primaryClass : secondaryClass}`}
     >
+      {/* Full card clickable link for crawlers & accessibility */}
+      <Link href={href} className='absolute inset-0 z-10' aria-label={`Detail event ${event.name}`} />
       {/* Date Badge */}
       <div
         className={`flex flex-col flex-shrink-0 justify-center items-center px-5 py-4 rounded-xl min-w-[72px] transition-colors duration-300 ${
@@ -150,13 +147,13 @@ const HorizontalEventCard = ({ event, variant }: HorizontalEventCardProps) => {
         </div>
 
         {/* Mobile CTA */}
-        <div className='sm:hidden mt-3 w-full'>
+        <div className='sm:hidden mt-3 w-full relative z-20'>
           {renderCta(true)}
         </div>
       </div>
 
       {/* Desktop CTA */}
-      <div className='hidden sm:flex flex-shrink-0'>
+      <div className='hidden sm:flex flex-shrink-0 relative z-20'>
         {renderCta()}
       </div>
     </motion.div>

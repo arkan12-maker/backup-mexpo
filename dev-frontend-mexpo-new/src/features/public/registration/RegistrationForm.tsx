@@ -64,15 +64,22 @@ export default function RegistrationForm({ event, fields, ticketTypes }: Props) 
     searchParams.get("type") === "VISITOR" ||
     searchParams.get("hide_role") === "true";
 
-  const isPaid =
-    event.ticket_mode === "PAID" || event.features?.paidTicket === true;
+  const isPaidEvent =
+    event.ticket_mode === "PAID" && event.features?.paidTicket !== false;
 
-  // Pre-load Snap script so the checkout modal opens with zero delay
+  const selectedTicket =
+    ticketTypes.find((t) => t.uuid === ticketTypeId) || ticketTypes[0];
+
+  const isTicketActuallyPaid = Boolean(
+    isPaidEvent && selectedTicket && selectedTicket.price > 0
+  );
+
+  // Pre-load Snap script so the checkout modal opens with zero delay (only for paid tickets)
   useEffect(() => {
-    if (isPaid) {
+    if (isTicketActuallyPaid) {
       void loadSnapScript();
     }
-  }, [isPaid]);
+  }, [isTicketActuallyPaid]);
 
   useEffect(() => {
     if (isLoadingAuth) return;
@@ -220,9 +227,9 @@ export default function RegistrationForm({ event, fields, ticketTypes }: Props) 
           value: answers[f.field_key] ?? "",
         })),
       };
-      if (isPaid) {
-        payload.ticket_type_id = ticketTypeId || undefined;
-        if (showManualPayment && payment.payment_reference.trim()) {
+      if (isPaidEvent && selectedTicket) {
+        payload.ticket_type_id = selectedTicket.uuid;
+        if (isTicketActuallyPaid && showManualPayment && payment.payment_reference.trim()) {
           payload.payment_reference = payment.payment_reference.trim();
           payload.payment_method = payment.payment_method;
         }
@@ -232,15 +239,15 @@ export default function RegistrationForm({ event, fields, ticketTypes }: Props) 
       setSubmitted(true);
 
       // A1b — public registration returns the Midtrans Snap intent for paid
-      // events, so the fresh visitor can pay right away (no login needed).
-      if (isPaid && !showManualPayment) {
+      // tickets, so the visitor can pay right away. Free tickets skip this completely!
+      if (isTicketActuallyPaid && !showManualPayment) {
         const paymentData = (res.data as { payment?: unknown } | null)?.payment;
         let intent = paymentData as unknown as PaymentIntent | undefined;
 
         if (!intent?.snap_token && isAuthenticated) {
           try {
             const checkoutRes = await checkout(event.uuid, {
-              ticket_type_id: ticketTypeId || undefined,
+              ticket_type_id: selectedTicket?.uuid,
             });
             if (checkoutRes.status && checkoutRes.data) {
               intent = checkoutRes.data as unknown as PaymentIntent;
@@ -249,7 +256,6 @@ export default function RegistrationForm({ event, fields, ticketTypes }: Props) 
             }
           } catch (err) {
             console.error("Checkout fallback threw error:", err);
-            // fallback handled by openSnap button
           }
         }
 
@@ -306,24 +312,48 @@ export default function RegistrationForm({ event, fields, ticketTypes }: Props) 
         </div>
         <h1 className="mb-2 text-2xl font-bold text-gray-900">Pendaftaran Berhasil!</h1>
         <p className="mb-6 text-sm text-gray-500">
-          Kamu berhasil mendaftar ke {event.name}.
-          {isPaid ? " Lanjutkan ke pembayaran tiket untuk mengaktifkan tiketmu." : " Sampai jumpa di event!"}
+          Kamu berhasil mendaftar ke <strong>{event.name}</strong>.
+          {isTicketActuallyPaid
+            ? " Lanjutkan ke pembayaran tiket untuk mengaktifkan tiketmu."
+            : " Tiket gratis kamu sudah aktif dan dapat diakses langsung melalui dashboard."}
         </p>
 
-        {isPaid && (paymentIntent || true) && (
+        {/* Free Ticket Info Card */}
+        {!isTicketActuallyPaid && (
+          <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50/50 p-5 text-left max-w-md mx-auto shadow-xs">
+            <div className="flex items-center justify-between border-b border-blue-100/80 pb-3">
+              <span className="text-xs font-semibold uppercase tracking-wider text-secondary">
+                Status Tiket
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Aktif (Gratis)
+              </span>
+            </div>
+            <div className="mt-3 space-y-1.5 text-xs text-gray-600">
+              <p><strong>Nama:</strong> {user.full_name}</p>
+              <p><strong>Email:</strong> {user.email}</p>
+              {selectedTicket && (
+                <p><strong>Kategori Tiket:</strong> {selectedTicket.name} (Gratis)</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Paid Ticket Checkout Card */}
+        {isTicketActuallyPaid && paymentIntent && (
           <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5 text-left">
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <span className="text-sm font-medium text-gray-600">
                 Tagihan Tiket
               </span>
               <span className="text-lg font-bold text-gray-900">
-                {paymentIntent ? `Rp ${paymentIntent.amount.toLocaleString("id-ID")}` : "-"}
+                Rp {paymentIntent.amount.toLocaleString("id-ID")}
               </span>
             </div>
             <div className="mt-3 grid grid-cols-1 gap-2 text-sm">
               <div className="flex items-center justify-between text-gray-500">
                 <span>Biaya tiket</span>
-                <span>{paymentIntent ? `Rp ${paymentIntent.amount.toLocaleString("id-ID")}` : "-"}</span>
+                <span>Rp {paymentIntent.amount.toLocaleString("id-ID")}</span>
               </div>
               {paymentIntent && paymentIntent.platform_fee > 0 && (
                 <div className="flex items-center justify-between text-gray-500">
@@ -333,7 +363,7 @@ export default function RegistrationForm({ event, fields, ticketTypes }: Props) 
               )}
               <div className="flex items-center justify-between font-semibold text-gray-800">
                 <span>Total dibayar</span>
-                <span>{paymentIntent ? `Rp ${paymentIntent.amount.toLocaleString("id-ID")}` : "-"}</span>
+                <span>Rp {paymentIntent.amount.toLocaleString("id-ID")}</span>
               </div>
             </div>
 
@@ -379,14 +409,20 @@ export default function RegistrationForm({ event, fields, ticketTypes }: Props) 
             </a>
           )}
           <Link
+            href={`/dashboard/${event.slug ?? event.uuid}`}
+            className="rounded-xl bg-secondary px-5 py-2.5 text-sm font-semibold text-white hover:bg-secondary/90 w-full sm:w-auto text-center shadow-xs"
+          >
+            Buka E-Ticket &amp; QR Code
+          </Link>
+          <Link
             href={`/event/${event.slug ?? event.uuid}`}
-            className="rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-white hover:bg-secondary/80 w-full sm:w-auto text-center"
+            className="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 w-full sm:w-auto text-center"
           >
             Lihat Detail Event
           </Link>
           <Link
             href="/"
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 w-full sm:w-auto text-center"
+            className="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 w-full sm:w-auto text-center"
           >
             Beranda Mexpo
           </Link>
@@ -476,18 +512,22 @@ export default function RegistrationForm({ event, fields, ticketTypes }: Props) 
         <form onSubmit={handleSubmit} className="space-y-8">
           <div className="bg-white rounded-xl border border-gray-100 p-6 md:p-8 space-y-6">
             <div className="rounded-lg bg-blue-50/60 p-4 text-sm text-gray-700">
-              {isPaid ? (
+              {isTicketActuallyPaid ? (
                 <span>
                   Tiket berbayar — pembayaran online instan via Midtrans Snap (QRIS, E-Wallet, VA Bank).
                 </span>
               ) : (
-                <span>Event gratis — tiket otomatis diterbitkan setelah pendaftaran.</span>
+                <span>
+                  {selectedTicket && selectedTicket.price === 0
+                    ? `Kategori tiket ${selectedTicket.name} gratis — tiket langsung aktif setelah pendaftaran.`
+                    : "Event gratis — tiket otomatis diterbitkan setelah pendaftaran."}
+                </span>
               )}
             </div>
 
-            {isPaid && ticketTypes.length > 0 && (
+            {isPaidEvent && ticketTypes.length > 0 && (
               <div>
-                <label className={LABEL_CLS}>Pilih Tiket</label>
+                <label className={LABEL_CLS}>Pilih Kategori Tiket</label>
                 <select
                   value={ticketTypeId}
                   onChange={(e) => setTicketTypeId(e.target.value)}
@@ -495,14 +535,14 @@ export default function RegistrationForm({ event, fields, ticketTypes }: Props) 
                 >
                   {ticketTypes.map((t) => (
                     <option key={t.uuid} value={t.uuid}>
-                      {t.name} — Rp {t.price?.toLocaleString("id-ID")}
+                      {t.name} — {t.price > 0 ? `Rp ${t.price.toLocaleString("id-ID")}` : "Gratis (Rp 0)"}
                     </option>
                   ))}
                 </select>
               </div>
             )}
 
-            {isPaid && (
+            {isTicketActuallyPaid && (
               <div className="border-t border-gray-100 pt-3">
                 <button
                   type="button"
@@ -615,7 +655,7 @@ export default function RegistrationForm({ event, fields, ticketTypes }: Props) 
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-secondary px-5 py-3.5 font-semibold text-white transition-colors hover:bg-secondary/80 disabled:opacity-50"
             >
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <TicketIcon className="h-4 w-4" />}
-              {isPaid ? "Daftar & Dapatkan Tiket" : "Daftar Sekarang"}
+              {isTicketActuallyPaid ? "Daftar & Lanjut Pembayaran" : "Daftar Sekarang (Gratis)"}
             </button>
           </div>
         </form>

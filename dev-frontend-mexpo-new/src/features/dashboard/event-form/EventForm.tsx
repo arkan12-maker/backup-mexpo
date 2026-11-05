@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { Loader2, Upload, X } from "lucide-react";
 
 import Input from "@/shared/components/form/Input";
+import CurrencyInput from "@/shared/components/form/CurrencyInput";
+import FormattedNumberInput from "@/shared/components/form/FormattedNumberInput";
 import Image from "next/image";
 import {
   Event,
@@ -80,7 +82,8 @@ export default function EventForm({ event }: Props) {
       souvenir: event?.features?.souvenir ?? true,
       product: event?.features?.product ?? true,
       pos: event?.features?.pos ?? true,
-      paidTicket: event?.features?.paidTicket ?? true,
+      paidTicket: event ? (event.features?.paidTicket ?? (event.ticket_mode === "PAID")) : false,
+      maps_embed_url: event?.features?.maps_embed_url ?? "",
     },
   });
   const [souvenirRules, setSouvenirRules] = useState({
@@ -231,13 +234,33 @@ export default function EventForm({ event }: Props) {
             placeholder="Deskripsi singkat event..."
           />
           <Input
-            label="Lokasi"
+            label="Lokasi (Nama Tempat / Alamat)"
             type="text"
             required
             value={form.location}
             onChange={(e) => setField("location", e.target.value)}
-            placeholder="Contoh: SMK Telkom Malang"
+            placeholder="Contoh: SMK Telkom Malang, Jl. Danau Ranau"
           />
+          <div className="space-y-1">
+            <Input
+              label="Google Maps Embed URL (Opsional)"
+              type="text"
+              value={form.features.maps_embed_url || ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                const match = val.match(/src=["']([^"']+)["']/);
+                const cleanUrl = match ? match[1] : val;
+                setForm((f) => ({
+                  ...f,
+                  features: { ...f.features, maps_embed_url: cleanUrl },
+                }));
+              }}
+              placeholder="https://www.google.com/maps/embed?pb=... atau tempel kode <iframe>"
+            />
+            <p className="text-[11px] text-gray-500">
+              Salin dari Google Maps: <strong>Bagikan &gt; Sematkan peta &gt; Salin HTML</strong> (atau URL src-nya). Jika dikosongkan, peta akan mencari lokasi berdasarkan nama tempat di atas secara otomatis.
+            </p>
+          </div>
           <Input
             label="Penyelenggara"
             type="text"
@@ -273,12 +296,13 @@ export default function EventForm({ event }: Props) {
               value={form.registration_deadline}
               onChange={(e) => setField("registration_deadline", e.target.value)}
             />
-            <Input
-              label="Kuota (0 = tidak terbatas)"
-              type="number"
-              min="0"
-              value={form.quota}
-              onChange={(e) => setField("quota", e.target.value)}
+            <FormattedNumberInput
+              label="Kuota Pengunjung (0 = tidak terbatas)"
+              value={Number(form.quota) || 0}
+              onChange={(val) => setField("quota", String(val))}
+              suffix="Orang"
+              placeholder="0"
+              hint="Batas maksimal pendaftar event"
             />
           </div>
         </div>
@@ -352,32 +376,23 @@ export default function EventForm({ event }: Props) {
             <label className="block mb-2 font-medium text-gray-700 text-sm">
               Aturan Souvenir
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-lg border border-gray-200 bg-white p-3">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-gray-500">
-                  Min. kunjungan booth (0 = 5)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={souvenirRules.minVisitedBooth}
-                  onChange={(e) => setSouvenirRules({ ...souvenirRules, minVisitedBooth: e.target.value })}
-                  className="h-9 w-full rounded-md border border-gray-300 px-3 text-sm"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-gray-500">
-                  Min. total transaksi (Rp)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={souvenirRules.minTransaction}
-                  onChange={(e) => setSouvenirRules({ ...souvenirRules, minTransaction: e.target.value })}
-                  className="h-9 w-full rounded-md border border-gray-300 px-3 text-sm"
-                />
-              </div>
-              <label className="flex items-center gap-2 text-sm text-gray-700">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-xl border border-gray-200 bg-white p-4">
+              <FormattedNumberInput
+                label="Min. Kunjungan Booth"
+                value={Number(souvenirRules.minVisitedBooth) || 5}
+                onChange={(val) => setSouvenirRules({ ...souvenirRules, minVisitedBooth: String(val) })}
+                suffix="Booth"
+                placeholder="5"
+                hint="Default: minimal 5 booth"
+              />
+              <CurrencyInput
+                label="Min. Total Transaksi"
+                value={Number(souvenirRules.minTransaction) || 0}
+                onChange={(val) => setSouvenirRules({ ...souvenirRules, minTransaction: String(val) })}
+                placeholder="0"
+                hint="Minimal nominal transaksi POS di tenant"
+              />
+              <label className="flex items-center gap-2 text-sm text-gray-700 sm:col-span-2 pt-1">
                 <input
                   type="checkbox"
                   checked={souvenirRules.joinedSeminar}

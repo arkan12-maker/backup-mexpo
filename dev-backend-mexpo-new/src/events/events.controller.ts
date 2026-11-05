@@ -60,10 +60,11 @@ export class EventsController {
     @Query() query: QueryEventDto,
     @Request() request: authType.AuthRequest,
   ) {
+    const isSuperAdmin = request.user.role === 'SUPERADMIN';
     return this.eventsService.findAll(
       query,
-      [`OWNER`, `COMMITTEE`, 'VISITOR', 'TENANT'],
-      request.user.uuid,
+      isSuperAdmin ? undefined : [`OWNER`, `COMMITTEE`, 'VISITOR', 'TENANT'],
+      isSuperAdmin ? undefined : request.user.uuid,
     );
   }
 
@@ -104,6 +105,13 @@ export class EventsController {
   @UsePipes(new ValidationPipe({ exceptionFactory: FormatValidation }))
   approvalQueue(@Query() query: QueryEventDto) {
     return this.eventsService.findAllForApproval(query);
+  }
+
+  @Get('admin/overview')
+  @UseGuards(RoleGuard)
+  @Roles(`SUPERADMIN`)
+  adminOverview() {
+    return this.eventsService.getSuperAdminOverview();
   }
 
   @Post(':id/publish-request')

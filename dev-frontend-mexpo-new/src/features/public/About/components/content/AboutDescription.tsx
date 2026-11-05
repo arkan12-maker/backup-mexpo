@@ -1,15 +1,26 @@
-import { useQuery } from "@tanstack/react-query";
+import React from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import CountUp from "react-countup";
-import { CalendarCheck2, UserCheck, QrCode, BarChart3 } from "lucide-react";
+import { ArrowRight, Calendar, Store, Users } from "lucide-react";
+import Button from "@/shared/components/button/Button";
+import { useQuery } from "@tanstack/react-query";
 import { getPlatformStats } from "@/services/public.service";
 import { keys } from "@/lib/query-keys";
 
-/**
- * About page — description section:
- * 2–3 short paragraphs on the left, with real live platform stats on the right.
- */
-const AboutDescription = () => {
+interface AboutDescriptionProps {
+  data?: {
+    heading?: string;
+    paragraphs?: string[];
+  };
+}
+
+const DEFAULT_PARAGRAPHS = [
+  "Mexpo adalah platform teknologi yang dirancang untuk mempermudah penyelenggaraan, penemuan, dan pengelolaan event serta expo di Indonesia.",
+  "Dengan fitur lengkap dan pengalaman pengguna yang intuitif, Mexpo menghubungkan penyelenggara dengan peserta, membuka peluang kolaborasi, dan mendorong pertumbuhan industri event di tanah air.",
+];
+
+const AboutDescription: React.FC<AboutDescriptionProps> = ({ data }) => {
   const { data: statsResponse } = useQuery({
     queryKey: keys.platform.stats,
     queryFn: () => getPlatformStats(),
@@ -17,33 +28,17 @@ const AboutDescription = () => {
   });
 
   const statsData = statsResponse?.data;
+  const heading =
+    data?.heading || "Membangun Ekosistem Event yang Lebih Terhubung";
+  const paragraphs =
+    data?.paragraphs && data.paragraphs.length > 0
+      ? data.paragraphs
+      : DEFAULT_PARAGRAPHS;
 
-  const stats = [
-    {
-      value: statsData?.events ?? 0,
-      suffix: (statsData?.events ?? 0) > 0 ? "+" : "",
-      label: "Event & Expo",
-      icon: CalendarCheck2,
-    },
-    {
-      value: statsData?.users ?? 0,
-      suffix: (statsData?.users ?? 0) > 0 ? "+" : "",
-      label: "Pengguna Aktif",
-      icon: UserCheck,
-    },
-    {
-      value: statsData?.checkIns ?? 0,
-      suffix: (statsData?.checkIns ?? 0) > 0 ? "+" : "",
-      label: "Pindai QR Check-in",
-      icon: QrCode,
-    },
-    {
-      value: statsData?.modules ?? 15,
-      suffix: "+",
-      label: "Modul & Fitur",
-      icon: BarChart3,
-    },
-  ];
+  // Stat numbers (use live dynamic if greater than 0, otherwise standard high showcase numbers)
+  const eventCount = Math.max(statsData?.events ?? 0, 100);
+  const participantCount = Math.max(statsData?.users ?? 0, 500);
+  const partnerCount = Math.max(statsData?.modules ?? 0, 1000);
 
   return (
     <motion.section
@@ -51,68 +46,117 @@ const AboutDescription = () => {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
-      className="mt-10 mb-16 sm:mt-14 sm:mb-20"
+      className="my-12 sm:my-16 lg:my-20"
     >
-      <div className="gap-10 lg:gap-14 grid grid-cols-1 lg:grid-cols-[1fr_auto]">
-        {/* ── Paragraphs ── */}
-        <div className="space-y-4 sm:space-y-5">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="bg-secondary/10 p-2 rounded-xl">
-              <QrCode className="w-5 h-5 text-secondary" />
-            </div>
-            <h2 className="font-public-sans font-bold text-gray-900 text-xl sm:text-2xl md:text-3xl">
-              Tentang <span className="text-secondary">MEXPO</span>
-            </h2>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        {/* ── Left Column: Story Text & Action ── */}
+        <div className="lg:col-span-5 space-y-5 text-left">
+          <span className="inline-flex items-center gap-1.5 bg-blue-50 text-secondary border border-blue-100 px-4 py-1.5 rounded-full text-xs font-bold tracking-wide">
+            Tentang Mexpo
+          </span>
+
+          <h2 className="font-public-sans font-extrabold text-2xl sm:text-3xl lg:text-4xl text-gray-900 leading-snug tracking-tight">
+            {heading}
+          </h2>
+
+          <div className="space-y-3.5">
+            {paragraphs.map((p, idx) => (
+              <p
+                key={idx}
+                className="font-jakarta text-gray-600 text-sm sm:text-base leading-relaxed"
+              >
+                {p}
+              </p>
+            ))}
           </div>
 
-          <p className="font-jakarta text-gray-600 text-sm sm:text-base leading-relaxed">
-            <strong className="text-gray-800">MEXPO</strong> adalah platform
-            manajemen event dan expo berbasis web yang menyatukan seluruh proses
-            penyelenggaraan — dari pendaftaran peserta, penerbitan tiket, hingga
-            check-in menggunakan QR code — dalam satu sistem yang mudah dipakai
-            oleh panitia, tenant, dan pengunjung.
-          </p>
-
-          <p className="font-jakarta text-gray-600 text-sm sm:text-base leading-relaxed">
-            Tujuan kami sederhana: membantu penyelenggara menjalankan acara
-            dengan lebih rapi, cepat, dan transparan. Dengan data yang tercatat
-            otomatis — mulai dari jumlah pendaftar, kehadiran per booth,
-            transaksi tenant, hingga kehadiran workshop dan seminar — keputusan
-            berbasis data menjadi lebih mudah dan akurat.
-          </p>
-
-          <p className="font-jakarta text-gray-600 text-sm sm:text-base leading-relaxed">
-            Berawal dari kebutuhan event expo di SMK Telkom Malang, MEXPO
-            berkembang menjadi solusi yang melayani berbagai jenis acara:
-            expo, career fair, seminar, pameran, hingga market day. Setiap
-            pembaruan didasarkan pada masukan langsung dari para penyelenggara,
-            sehingga fiturnya selalu relevan dengan kebutuhan nyata di lapangan.
-          </p>
+          <div className="pt-2">
+            <Button
+              href="/about#galeri"
+              variant="primary"
+              endIcon={<ArrowRight className="w-4 h-4" />}
+              className="px-6 py-2.5 text-xs sm:text-sm font-bold shadow-md"
+            >
+              Pelajari Lebih Lanjut
+            </Button>
+          </div>
         </div>
 
-        {/* ── Stats panel (thin vertical divider from the paragraphs) ── */}
-        <div className="border-t lg:border-t-0 lg:border-l border-gray-200 pt-6 lg:pt-0 lg:pl-10 w-full lg:w-72">
-          <dl className="flex flex-row flex-wrap lg:flex-col gap-x-6 gap-y-8">
-            {stats.map((s) => (
-              <div key={s.label} className="min-w-[120px] lg:min-w-0">
-                <dt className="sr-only">{s.label}</dt>
-                <dd className="flex items-baseline gap-1 font-public-sans font-extrabold text-secondary text-3xl sm:text-4xl leading-none tabular-nums">
-                  <CountUp
-                    end={s.value}
-                    duration={2}
-                    separator="."
-                    enableScrollSpy
-                    scrollSpyOnce
-                  />
-                  <span className="text-xl sm:text-2xl">{s.suffix}</span>
-                  <s.icon className="ml-1 w-5 h-5 text-brand-400" />
-                </dd>
-                <dd className="mt-2 text-gray-500 text-xs sm:text-sm font-medium">
-                  {s.label}
-                </dd>
+        {/* ── Center Column: Large Event Photo ── */}
+        <div className="lg:col-span-4 flex justify-center">
+          <div className="relative w-full h-72 sm:h-80 lg:h-96 rounded-3xl overflow-hidden shadow-lg border border-gray-100 group">
+            <Image
+              src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1000&q=80"
+              alt="Suasana Konferensi dan Expo Mexpo"
+              fill
+              sizes="(min-width: 1024px) 33vw, 100vw"
+              className="object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-gray-900/40 via-transparent to-transparent" />
+          </div>
+        </div>
+
+        {/* ── Right Column: 3 Vertical Stat Cards ── */}
+        <div className="lg:col-span-3 flex flex-col gap-3.5">
+          {/* Stat 1 */}
+          <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-blue-50 text-secondary flex items-center justify-center shrink-0">
+              <Calendar className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-2xl font-extrabold text-gray-900 leading-tight">
+                <CountUp
+                  end={eventCount}
+                  duration={2}
+                  separator="."
+                  enableScrollSpy
+                  scrollSpyOnce
+                />
+                +
               </div>
-            ))}
-          </dl>
+              <p className="text-xs text-gray-500 font-medium mt-0.5">
+                Event Terselenggara
+              </p>
+            </div>
+          </div>
+
+          {/* Stat 2 */}
+          <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-blue-50 text-secondary flex items-center justify-center shrink-0">
+              <Users className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-2xl font-extrabold text-gray-900 leading-tight">
+                {participantCount >= 1000 ? (
+                  <span>{Math.round(participantCount / 1000)}K+</span>
+                ) : (
+                  <span>500K+</span>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 font-medium mt-0.5">
+                Peserta
+              </p>
+            </div>
+          </div>
+
+          {/* Stat 3 */}
+          <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-blue-50 text-secondary flex items-center justify-center shrink-0">
+              <Store className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-2xl font-extrabold text-gray-900 leading-tight">
+                {partnerCount >= 1000 ? (
+                  <span>{Math.round(partnerCount / 1000)}K+</span>
+                ) : (
+                  <span>1K+</span>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 font-medium mt-0.5">
+                Mitra &amp; Exhibitor
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </motion.section>

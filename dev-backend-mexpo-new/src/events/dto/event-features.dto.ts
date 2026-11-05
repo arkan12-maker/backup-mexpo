@@ -3,6 +3,7 @@ import {
   IsBoolean,
   IsObject,
   IsOptional,
+  IsString,
   ValidateNested,
 } from 'class-validator';
 
@@ -35,6 +36,11 @@ export class EventFeaturesDto {
   @IsOptional()
   @IsBoolean()
   paidTicket?: boolean;
+
+  /** Custom Google Maps embed URL (or raw iframe src) provided by the organizer */
+  @IsOptional()
+  @IsString()
+  maps_embed_url?: string;
 }
 
 /** Object wrapper used inside Create/UpdateEventDto (JSON string or object). */

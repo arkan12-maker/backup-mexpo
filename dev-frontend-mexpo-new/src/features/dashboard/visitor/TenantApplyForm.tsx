@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, Upload } from "lucide-react";
 import Input from "@/shared/components/form/Input";
+import PhoneInput from "@/shared/components/form/PhoneInput";
 import Button from "@/shared/components/button/Button";
 import { Event } from "@/entities/event/event.entity";
 import { applyTenant } from "@/services/tenant.service";
@@ -80,7 +81,7 @@ export default function TenantApplyForm({ event }: { event: Event }) {
             Kategori Tenant <span className="text-red-500">*</span>
           </label>
           <select
-            className="w-full h-11 px-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow text-sm bg-white"
+            className="w-full h-11 px-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow text-sm text-black bg-white"
             value={form.category_id}
             onChange={(e) => setForm({ ...form, category_id: e.target.value })}
             required
@@ -93,11 +94,12 @@ export default function TenantApplyForm({ event }: { event: Event }) {
           </select>
         </div>
 
-        <Input
+        <PhoneInput
           label="No. Telepon / WhatsApp"
           required
           value={form.phone}
-          onChange={(e) => setForm({ ...form, phone: e.target.value })}
+          onChange={(val) => setForm({ ...form, phone: val })}
+          hint="Format: 0812-3456-7890"
         />
 
         <Input
@@ -118,7 +120,7 @@ export default function TenantApplyForm({ event }: { event: Event }) {
         <label className="text-sm font-medium text-gray-700 block">Deskripsi</label>
         <textarea
           required
-          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow text-sm min-h-[100px] resize-y"
+          className="w-full px-4 py-3 border border-gray-200 text-black rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow text-sm min-h-[100px] resize-y"
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
           placeholder="Jelaskan produk atau layanan Anda..."

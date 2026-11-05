@@ -15,14 +15,48 @@ import { usePagination } from '@/shared/hooks/usePagination'
 import { DataPagination } from '@/shared/components/ui/DataPagination'
 import ProductCard from '@/shared/components/cards/TenantProductCard'
 
-export const TenantTab = ({ tenantData }: { tenantData: Tenant[] }) => {
+export const TenantTab = ({
+  tenantData,
+  category = "Penyewa",
+  title = "Penyewa Kami",
+}: {
+  tenantData: Tenant[];
+  category?: string;
+  title?: string;
+}) => {
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null)
   const [search, setSearch] = useState('')
   const [productSearch, setProductSearch] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL')
+  const [sortBy, setSortBy] = useState<'name_asc' | 'name_desc' | 'products_desc'>('name_asc')
 
-  const filteredTenants = tenantData.filter(tenant =>
-    tenant.name.toLowerCase().includes(search.toLowerCase())
-  )
+  // Extract unique categories
+  const categories = Array.from(
+    new Set(tenantData.map(t => t.category?.name).filter(Boolean) as string[])
+  ).sort()
+
+  const filteredTenants = tenantData
+    .filter(tenant => {
+      // Search
+      const q = search.toLowerCase()
+      const matchSearch =
+        tenant.name.toLowerCase().includes(q) ||
+        (tenant.category?.name && tenant.category.name.toLowerCase().includes(q))
+
+      // Category filter
+      const matchCategory =
+        selectedCategory === 'ALL' || tenant.category?.name === selectedCategory
+
+      return matchSearch && matchCategory
+    })
+    .sort((a, b) => {
+      if (sortBy === 'name_asc') return a.name.localeCompare(b.name)
+      if (sortBy === 'name_desc') return b.name.localeCompare(a.name)
+      if (sortBy === 'products_desc') {
+        return (b.tenantProducts?.length ?? 0) - (a.tenantProducts?.length ?? 0)
+      }
+      return 0
+    })
 
   const filteredProducts = selectedTenant?.tenantProducts?.filter(product =>
     product.name.toLowerCase().includes(productSearch.toLowerCase())
@@ -37,7 +71,7 @@ export const TenantTab = ({ tenantData }: { tenantData: Tenant[] }) => {
     paginate: paginateTenants,
   } = usePagination<Tenant>({
     totalItems: filteredTenants.length,
-    initialPageSize: 4,
+    initialPageSize: 8,
   })
 
   const {
@@ -53,6 +87,59 @@ export const TenantTab = ({ tenantData }: { tenantData: Tenant[] }) => {
   })
 
   const paginatedTenants = paginateTenants(filteredTenants)
+
+  // Filter Pills Component
+  const filterComponent = categories.length > 0 ? (
+    <div className="flex items-center gap-2 flex-wrap">
+      <button
+        type="button"
+        onClick={() => { setSelectedCategory('ALL'); setTenantPage(1); }}
+        className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+          selectedCategory === 'ALL'
+            ? 'bg-secondary text-white shadow-xs'
+            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+        }`}
+      >
+        Semua Kategori ({tenantData.length})
+      </button>
+      {categories.map((catName) => {
+        const count = tenantData.filter(t => t.category?.name === catName).length
+        return (
+          <button
+            key={catName}
+            type="button"
+            onClick={() => { setSelectedCategory(catName); setTenantPage(1); }}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+              selectedCategory === catName
+                ? 'bg-secondary text-white shadow-xs'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            {catName} ({count})
+          </button>
+        )
+      })}
+    </div>
+  ) : null
+
+  // Sort Dropdown Component
+  const sortComponent = (
+    <div className="flex items-center gap-2">
+      <span className="text-xs font-medium text-gray-500 whitespace-nowrap">Urutkan:</span>
+      <select
+        value={sortBy}
+        onChange={(e) => {
+          setSortBy(e.target.value as any)
+          setTenantPage(1)
+        }}
+        className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:border-secondary transition-colors"
+      >
+        <option value="name_asc">Nama: A - Z</option>
+        <option value="name_desc">Nama: Z - A</option>
+        <option value="products_desc">Produk Terbanyak</option>
+      </select>
+    </div>
+  )
 
   if (selectedTenant) {
 
@@ -186,11 +273,14 @@ export const TenantTab = ({ tenantData }: { tenantData: Tenant[] }) => {
 
   return (
     <TabListShell
-      category="Penyewa"
-      title="Penyewa Kami"
+      category={category}
+      title={title}
       searchPlaceholder="Cari Penyewa..."
       search={search}
-      setSearch={setSearch}
+      setSearch={(val) => { setSearch(val); setTenantPage(1); }}
+      filterComponent={filterComponent}
+      sortComponent={sortComponent}
+      totalCount={filteredTenants.length}
     >
       {filteredTenants.length > 0 ? (
         <div className='grid grid-cols-1 gap-4 sm:gap-6'>
@@ -204,7 +294,13 @@ export const TenantTab = ({ tenantData }: { tenantData: Tenant[] }) => {
           ))}
         </div>
       ) : (
-        <div className="text-center text-gray-500">Tidak ada penyewa ditemukan</div>
+        <div className="py-12 px-6 rounded-2xl border border-gray-100 bg-gray-50/50 text-center max-w-xl mx-auto">
+          <ShoppingBag className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+          <p className="text-sm font-semibold text-gray-700">Tidak Ada Penyewa Ditemukan</p>
+          <p className="text-xs text-gray-400 mt-1">
+            Coba ubah kata kunci pencarian atau ganti filter kategori di atas.
+          </p>
+        </div>
       )}
 
       {filteredTenants.length > tenantItemsPerPage && (

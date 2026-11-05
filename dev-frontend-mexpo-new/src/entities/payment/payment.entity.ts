@@ -70,6 +70,9 @@ export interface SettlementSummary {
   payout: EventPayoutInfo;
   payout_status: PayoutStatus;
   settled_at: string | null;
+  settlement_requested?: boolean;
+  settlement_requested_at?: string | null;
+  settlement_notes?: string | null;
   settlements: EventSettlement[];
 }
 

@@ -31,6 +31,8 @@ import { ContactMessagesModule } from './contact-messages/contact-messages.modul
 import { CertificatesModule } from './certificates/certificates.module';
 import { PaymentsModule } from './payments/payments.module';
 import { IntegrationsModule } from './integrations/integrations.module';
+import { FaqsModule } from './faqs/faqs.module';
+import { SiteContentsModule } from './site-contents/site-contents.module';
 
 @Module({
   imports: [
@@ -64,6 +66,8 @@ import { IntegrationsModule } from './integrations/integrations.module';
     CertificatesModule,
     PaymentsModule,
     IntegrationsModule,
+    FaqsModule,
+    SiteContentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

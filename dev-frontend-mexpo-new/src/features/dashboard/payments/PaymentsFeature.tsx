@@ -150,13 +150,14 @@ export function PaymentsFeature({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Payout account (OWNER/COMMITTEE) */}
         <PayoutForm
-          key={`${summary?.payout_status ?? "no"}-${summary?.payout.account_number ?? "no"}`}
+          key={`${summary?.payout_status ?? "no"}-${summary?.payout.account_number ?? "no"}-${summary?.settlement_requested ? "req" : "not"}`}
           eventUuid={event.uuid}
           initial={{
             bank_name: summary?.payout.bank_name ?? "",
             account_number: summary?.payout.account_number ?? "",
             account_holder: summary?.payout.account_holder ?? "",
           }}
+          summary={summary}
           onSaved={invalidate}
         />
 
@@ -269,80 +270,180 @@ export function PaymentsFeature({
 function PayoutForm({
   eventUuid,
   initial,
+  summary,
   onSaved,
 }: {
   eventUuid: string;
   initial: { bank_name: string; account_number: string; account_holder: string };
+  summary?: SettlementSummary | null;
   onSaved: () => void;
 }) {
   const [bank, setBank] = useState(initial.bank_name);
   const [accNum, setAccNum] = useState(initial.account_number);
   const [accHolder, setAccHolder] = useState(initial.account_holder);
+  const [notes, setNotes] = useState(summary?.settlement_notes ?? "");
   const [saving, setSaving] = useState(false);
+  const [requesting, setRequesting] = useState(false);
 
-  const save = async () => {
-    setSaving(true);
+  const isSettled = summary?.payout_status === "SETTLED";
+  const isRequested = Boolean(summary?.settlement_requested);
+  const netAmount = summary?.net ?? 0;
+
+  const save = async (requestSettlement = false) => {
+    if (!bank.trim() || !accNum.trim() || !accHolder.trim()) {
+      toast.error("Mohon lengkapi Nama Bank, Nomor Rekening, dan Atas Nama.");
+      return;
+    }
+
+    if (requestSettlement) {
+      if (netAmount <= 0) {
+        toast.error("Belum ada dana bersih yang dapat dicairkan.");
+        return;
+      }
+      if (
+        !window.confirm(
+          `Konfirmasi pengajuan pencairan dana sebesar ${formatPrice(netAmount)} ke rekening ${bank} - ${accNum} a.n ${accHolder}? Permohonan akan diteruskan ke antrean Superadmin.`
+        )
+      ) {
+        return;
+      }
+      setRequesting(true);
+    } else {
+      setSaving(true);
+    }
+
     try {
       const res = await updateEventPayout(eventUuid, {
-        bank_name: bank,
-        account_number: accNum,
-        account_holder: accHolder,
+        bank_name: bank.trim(),
+        account_number: accNum.trim(),
+        account_holder: accHolder.trim(),
+        request_settlement: requestSettlement ? true : undefined,
+        notes: notes.trim() || undefined,
       });
       if (!res.status) throw new Error(res.message ?? "Gagal menyimpan");
-      toast.success("Rekening payout disimpan");
+
+      toast.success(
+        requestSettlement
+          ? "Permohonan settlement berhasil dibuka & dikirimkan ke Superadmin!"
+          : "Rekening payout berhasil disimpan"
+      );
       onSaved();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Gagal menyimpan rekening");
+      toast.error(e instanceof Error ? e.message : "Terjadi kesalahan koneksi");
     } finally {
       setSaving(false);
+      setRequesting(false);
     }
   };
 
   return (
-    <section className="rounded-xl border border-gray-200 bg-white p-5">
-      <div className="mb-3 flex items-center gap-2">
-        <Landmark className="h-4 w-4 text-gray-400" />
-        <h3 className="text-sm font-semibold text-gray-800">
-          Rekening Payout Organizer
-        </h3>
+    <section className="rounded-xl border border-gray-200 bg-white p-5 space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Landmark className="h-4 w-4 text-secondary" />
+          <h3 className="text-sm font-semibold text-gray-800">
+            Formulir Rekening &amp; Permohonan Settlement
+          </h3>
+        </div>
+
+        {isSettled ? (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+            <CheckCircle2 className="w-3.5 h-3.5" /> Settled
+          </span>
+        ) : isRequested ? (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Menunggu Transfer Superadmin
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-secondary">
+            Belum Diajukan
+          </span>
+        )}
       </div>
+
+      {/* Info status note */}
+      {isSettled ? (
+        <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-100 text-xs text-emerald-800">
+          Dana bersih sebesar <strong>{formatPrice(netAmount)}</strong> telah berhasil dicairkan dan ditransfer oleh Superadmin.
+        </div>
+      ) : isRequested ? (
+        <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800">
+          Permohonan pencairan dana telah <strong>dibuka oleh panitia</strong> dan sedang berada di antrean transfer Superadmin.
+        </div>
+      ) : (
+        <div className="p-3 rounded-lg bg-blue-50/60 border border-blue-100 text-xs text-gray-600">
+          Lengkapi rekening bank penyelenggara dan klik <strong>Buka &amp; Ajukan Settlement</strong> agar permohonan pencairan muncul pada antrean Superadmin.
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-3">
         <div>
-          <label className="mb-1 block text-xs font-medium text-gray-500">Nama Bank</label>
+          <label className="mb-1 block text-xs font-medium text-gray-500">Nama Bank *</label>
           <input
             value={bank}
+            disabled={isSettled}
             onChange={(e) => setBank(e.target.value)}
             className={inputCls}
-            placeholder="BCA"
+            placeholder="Contoh: BCA / Mandiri / BRI / BNI"
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-gray-500">Nomor Rekening</label>
+          <label className="mb-1 block text-xs font-medium text-gray-500">Nomor Rekening *</label>
           <input
             value={accNum}
+            disabled={isSettled}
             onChange={(e) => setAccNum(e.target.value)}
             className={inputCls}
-            placeholder="1234567890"
+            placeholder="Contoh: 1234567890"
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-gray-500">Atas Nama</label>
+          <label className="mb-1 block text-xs font-medium text-gray-500">Atas Nama Rekening *</label>
           <input
             value={accHolder}
+            disabled={isSettled}
             onChange={(e) => setAccHolder(e.target.value)}
             className={inputCls}
-            placeholder="CV Contoh"
+            placeholder="Contoh: Panitia Tech Expo 2026"
           />
         </div>
-        <button
-          type="button"
-          onClick={() => void save()}
-          disabled={saving}
-          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-white hover:bg-secondary/80 disabled:opacity-50"
-        >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-          Simpan Rekening
-        </button>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-gray-500">Catatan Pengajuan (Opsional)</label>
+          <input
+            value={notes}
+            disabled={isSettled}
+            onChange={(e) => setNotes(e.target.value)}
+            className={inputCls}
+            placeholder="Catatan tambahan untuk Superadmin..."
+          />
+        </div>
+
+        {!isSettled && (
+          <div className="pt-2 flex flex-col sm:flex-row items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void save(false)}
+              disabled={saving || requesting}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+              Simpan Rekening
+            </button>
+            <button
+              type="button"
+              onClick={() => void save(true)}
+              disabled={saving || requesting || netAmount <= 0}
+              className="w-full sm:flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-secondary px-4 py-2 text-xs font-semibold text-white hover:bg-secondary/90 disabled:opacity-50 shadow-xs"
+            >
+              {requesting ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Wallet className="h-3.5 w-3.5" />
+              )}
+              {isRequested ? "Perbarui Pengajuan Settlement" : "Buka & Ajukan Settlement"}
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );

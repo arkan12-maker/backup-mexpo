@@ -155,6 +155,12 @@ export class PaymentsService {
     platform_fee: number;
     redirect_url: string;
   }> {
+    if (params.amount <= 0) {
+      throw new BadRequestException(
+        'Nominal transaksi tiket harus lebih besar dari 0',
+      );
+    }
+
     const existing = await this.prisma.transactions.findFirst({
       where: { ticket_id: params.ticketId, status: `PENDING` },
       orderBy: { created_at: `desc` },
@@ -228,12 +234,12 @@ export class PaymentsService {
       });
       if (!event) throw new NotFoundException(`Event doesn't exists`);
       const isPaid =
-        event.ticket_mode === `PAID` ||
-        (event.features as { paidTicket?: boolean })?.paidTicket === true;
+        event.ticket_mode === `PAID` &&
+        (event.features as { paidTicket?: boolean })?.paidTicket !== false;
 
       if (!isPaid) {
         throw new BadRequestException(
-          `This event does not require online payment`,
+          `Event ini gratis dan tidak memerlukan pembayaran online`,
         );
       }
       await assertEventFeature(this.prisma, event_id, `paidTicket`);
@@ -269,8 +275,10 @@ export class PaymentsService {
           include: { ticket_type: true },
         });
       }
-      if (!ticket.ticket_type) {
-        throw new BadRequestException(`Ticket has no price configured`);
+      if (!ticket.ticket_type || ticket.ticket_type.price <= 0) {
+        throw new BadRequestException(
+          `Tiket gratis tidak memerlukan pembayaran online`,
+        );
       }
 
       const user = await this.prisma.users.findFirst({
@@ -569,6 +577,15 @@ export class PaymentsService {
           },
           payout_status: event.payout_status,
           settled_at: event.settled_at,
+          settlement_requested:
+            (event.features as Record<string, unknown> | null)
+              ?.settlement_requested === true,
+          settlement_requested_at:
+            (event.features as Record<string, unknown> | null)
+              ?.settlement_requested_at ?? null,
+          settlement_notes:
+            (event.features as Record<string, unknown> | null)
+              ?.settlement_notes ?? null,
           settlements,
         },
       };
@@ -591,14 +608,43 @@ export class PaymentsService {
       if (!event) throw new NotFoundException(`Event doesn't exists`);
       await this.assertManager(event_id, userId, role);
 
+      const bankName = dto.payout_bank_name ?? event.payout_bank_name;
+      const accNum = dto.payout_account_number ?? event.payout_account_number;
+      const accHolder =
+        dto.payout_account_holder ?? event.payout_account_holder;
+
+      if (dto.request_settlement) {
+        if (!bankName || !accNum || !accHolder) {
+          throw new BadRequestException(
+            'Nama Bank, Nomor Rekening, dan Atas Nama wajib diisi sebelum mengajukan pencairan (settlement).',
+          );
+        }
+      }
+
+      const existingFeatures =
+        event.features && typeof event.features === 'object'
+          ? (event.features as Record<string, unknown>)
+          : {};
+
+      const nextFeatures: Record<string, unknown> = {
+        ...existingFeatures,
+      };
+
+      if (dto.request_settlement !== undefined) {
+        nextFeatures.settlement_requested = dto.request_settlement;
+        nextFeatures.settlement_requested_at = dto.request_settlement
+          ? new Date().toISOString()
+          : null;
+        if (dto.notes) nextFeatures.settlement_notes = dto.notes;
+      }
+
       const updated = await this.prisma.events.update({
         where: { uuid: event_id },
         data: {
-          payout_bank_name: dto.payout_bank_name ?? event.payout_bank_name,
-          payout_account_number:
-            dto.payout_account_number ?? event.payout_account_number,
-          payout_account_holder:
-            dto.payout_account_holder ?? event.payout_account_holder,
+          payout_bank_name: bankName,
+          payout_account_number: accNum,
+          payout_account_holder: accHolder,
+          features: nextFeatures as unknown as Prisma.InputJsonValue,
           updated_by: userId,
         },
       });

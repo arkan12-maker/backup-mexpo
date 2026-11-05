@@ -22,6 +22,12 @@ export function SettlementSummaryStats({ summary, loading }: { summary: Settleme
             <span className="text-gray-500">Atas Nama</span>
             <span className="font-medium text-gray-900">{summary?.payout.account_holder || "-"}</span>
           </div>
+          {summary?.settlement_notes && (
+            <div className="flex justify-between border-t border-gray-100 pt-2 text-xs">
+              <span className="text-gray-500">Catatan Panitia</span>
+              <span className="font-medium text-gray-800 italic">&ldquo;{summary.settlement_notes}&rdquo;</span>
+            </div>
+          )}
         </div>
       </div>
 

@@ -162,8 +162,8 @@ export function buildRegistrationTicketEmailHtml(
                   <tr>
                     <td style="padding: 6px 0; color: #64748b;">Pembayaran</td>
                     <td style="padding: 6px 0; color: #1e293b;">${paymentMethod} ${
-                          paymentReference ? `(${paymentReference})` : ''
-                        }</td>
+                      paymentReference ? `(${paymentReference})` : ''
+                    }</td>
                   </tr>`
                       : ''
                   }

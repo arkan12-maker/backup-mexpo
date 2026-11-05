@@ -9,4 +9,3 @@ import { BcryptService } from '../bcrypt/bcrypt.service';
   providers: [EventUsersService, MailService, BcryptService],
 })
 export class EventUsersModule {}
-

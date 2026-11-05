@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Loader2, Plus } from "lucide-react";
 
 import Input from "@/shared/components/form/Input";
+import FormattedNumberInput from "@/shared/components/form/FormattedNumberInput";
 import SearchBar from "@/shared/components/form/SearchBar";
 import Button from "@/shared/components/button/Button";
 import PageHeader from "@/shared/components/ui/PageHeader";
@@ -184,7 +185,14 @@ export default function WorkshopsManager({ event }: { event: Event }) {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Input label="Mulai" type="datetime-local" required value={form.start_time} onChange={(e) => setForm({ ...form, start_time: e.target.value })} />
             <Input label="Selesai" type="datetime-local" required value={form.end_time} onChange={(e) => setForm({ ...form, end_time: e.target.value })} />
-            <Input label="Kuota (0 = tak terbatas)" type="number" min="0" value={String(form.quota ?? 0)} onChange={(e) => setForm({ ...form, quota: Number(e.target.value) || 0 })} />
+            <FormattedNumberInput
+              label="Kuota Peserta (0 = tak terbatas)"
+              value={form.quota ?? 0}
+              onChange={(val) => setForm({ ...form, quota: val })}
+              suffix="Peserta"
+              placeholder="0"
+              hint="Maksimal peserta yang dapat mendaftar"
+            />
             <label className="flex items-center gap-2 text-sm text-gray-700">
               <input type="checkbox" checked={form.is_public} onChange={(e) => setForm({ ...form, is_public: e.target.checked })} className="h-4 w-4 accent-brand-500" />
               Publik

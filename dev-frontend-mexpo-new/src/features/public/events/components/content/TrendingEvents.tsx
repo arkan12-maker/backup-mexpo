@@ -61,6 +61,7 @@ export default function TrendingEvents({ events }: TrendingEventsProps) {
               src={mainEvent.photo || "/images/cards/card-e.png"}
               alt={mainEvent.name}
               fill
+              sizes="(max-width: 1024px) 100vw, 66vw"
               className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
             {/* Gradient Overlay */}
@@ -102,6 +103,7 @@ export default function TrendingEvents({ events }: TrendingEventsProps) {
                 src={event.photo || "/images/cards/card-e.png"}
                 alt={event.name}
                 fill
+                sizes="(max-width: 1024px) 100vw, 33vw"
                 className="object-cover transition-transform duration-500 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />

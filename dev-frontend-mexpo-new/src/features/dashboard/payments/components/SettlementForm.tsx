@@ -3,6 +3,7 @@ import { CheckCircle2, Loader2, Wallet } from "lucide-react";
 import { SettlementSummary } from "@/entities/payment/payment.entity";
 import { formatPrice } from "@/shared/utils/format";
 import LoadingState from "@/shared/components/ui/LoadingState";
+import CurrencyInput from "@/shared/components/form/CurrencyInput";
 
 const inputCls =
   "w-full rounded-lg border border-gray-200 px-2.5 py-1.5 text-sm text-gray-900 focus:border-brand-500 focus:outline-none";
@@ -53,18 +54,14 @@ export function SettlementForm({ summary, loading, onSettle }: Props) {
             <strong>{formatPrice(net)}</strong>, lalu unggah buktinya di bawah ini.
           </p>
           <div className="grid grid-cols-1 gap-4">
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-600">
-                Jumlah ditransfer (harus sama persis dengan net)
-              </label>
-              <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className={inputCls}
-                placeholder={String(net)}
-              />
-            </div>
+            <CurrencyInput
+              label="Jumlah Ditransfer"
+              value={Number(amount) || 0}
+              onChange={(val) => setAmount(String(val))}
+              placeholder={String(net)}
+              hint={`Nominal harus sama persis dengan net payout: ${formatPrice(net)}`}
+              required
+            />
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-gray-600">Catatan</label>
               <input value={note} onChange={(e) => setNote(e.target.value)} className={inputCls} placeholder="Contoh: transfer via Internet Banking" />

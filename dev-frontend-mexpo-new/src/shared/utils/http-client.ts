@@ -181,6 +181,19 @@ export const httpPut = async <T = Record<string, never>>(
     meta: { cache: "no-store" },
   });
 
+export const httpPatch = async <T = Record<string, never>>(
+  endpoint: string,
+  payload?: string | FormData,
+  credential?: string,
+  query?: Record<string, string>
+) =>
+  httpRequest<T>("PATCH", endpoint, {
+    credential,
+    payload,
+    query,
+    meta: { cache: "no-store" },
+  });
+
 export const httpDelete = async <T = Record<string, never>>(
   endpoint: string,
   credential?: string,
