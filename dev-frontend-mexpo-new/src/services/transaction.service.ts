@@ -37,16 +37,29 @@ export async function createTransaction(
   proof?: File,
   visitor_id?: string,
 ) {
-  const fd = buildFormData(
-    {
-      detail_transactions: detail_transactions,
+  if (proof) {
+    const fd = buildFormData(
+      {
+        detail_transactions: detail_transactions,
+        payment_method,
+        paid: Boolean(paid),
+        visitor_id,
+      },
+      proof,
+    );
+    return await httpPost(`tenant-transactions/${tenantId}`, fd, "token");
+  }
+
+  return await httpPost(
+    `tenant-transactions/${tenantId}`,
+    JSON.stringify({
+      detail_transactions,
       payment_method,
-      paid,
-      visitor_id,
-    },
-    proof,
+      paid: Boolean(paid),
+      visitor_id: visitor_id || undefined,
+    }),
+    "token",
   );
-  return await httpPost(`tenant-transactions/${tenantId}`, fd, "token");
 }
 
 export async function updateTransaction(
