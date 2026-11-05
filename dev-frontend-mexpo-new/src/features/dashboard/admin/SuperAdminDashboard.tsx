@@ -11,6 +11,7 @@ import {
   FileQuestion,
   HelpCircle,
   Inbox,
+  LayoutDashboard,
   Loader2,
   Plus,
   RefreshCw,
@@ -29,6 +30,9 @@ import {
 } from "@/services/admin-dashboard.service";
 import EventList from "../dashboard/Eventlist";
 import { GeometricBannerBg } from "@/shared/components/ui/GeometricBanner";
+import DashboardSidebarLayout, {
+  SidebarTabGroup,
+} from "@/features/dashboard/shared/DashboardSidebarLayout";
 
 function formatIDR(amount: number) {
   return new Intl.NumberFormat("id-ID", {
@@ -62,69 +66,86 @@ export default function SuperAdminDashboard() {
     () => getAdminOverview(),
     {
       staleTime: 30 * 1000,
-    },
+    }
   );
 
-  return (
-    <div className="pb-20 max-w-7xl mx-auto space-y-8">
-      {/* ── Top Header with Mexpo Geometric Branding ── */}
-      <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 lg:p-10 shadow-lg border border-blue-400/20 text-white">
-        <GeometricBannerBg className="rounded-3xl" />
-        
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md text-white border border-white/20 px-3.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider shadow-sm">
-              <ShieldCheck className="w-3.5 h-3.5 text-blue-100" />
-              SuperAdmin Command Center
-            </div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight font-outfit text-white">
-              Halo, {user?.full_name || "Super Admin"} 👋
-            </h1>
-            <p className="text-blue-50/90 text-sm sm:text-base leading-relaxed">
-              Pusat kendali ekosistem Mexpo. Pantau metrik platform, verifikasi
-              rilis event, kelola akun, transaksi tiket, dan kustomisasi konten secara terpusat.
-            </p>
-          </div>
+  const pendingApprovalsCount = overview?.actionsNeeded?.pendingApprovals || 0;
+  const pendingSettlementsCount = overview?.actionsNeeded?.pendingSettlements || 0;
+  const unreadInquiriesCount = overview?.actionsNeeded?.unreadInquiries || 0;
 
-          <div className="flex flex-wrap items-center gap-3">
-            <Link
-              href="/dashboard/create"
-              className="inline-flex items-center gap-2 bg-white text-secondary hover:bg-blue-50 font-semibold text-xs sm:text-sm px-5 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all"
-            >
-              <Plus className="w-4 h-4 text-secondary" />
-              Buat Event
-            </Link>
-
-            <button
-              onClick={() => refetch()}
-              disabled={isFetching}
-              className="inline-flex items-center gap-2 bg-white/15 hover:bg-white/25 backdrop-blur-md text-white border border-white/20 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all shadow-sm"
-              title="Perbarui Data"
-            >
-              <RefreshCw
-                className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`}
-              />
-              Perbarui
-            </button>
-          </div>
+  // Sidebar header
+  const sidebarHeader = (
+    <div className="space-y-3">
+      <div className="flex items-center gap-3">
+        <div className="w-11 h-11 rounded-2xl bg-secondary text-white flex items-center justify-center font-bold text-sm shadow-sm shrink-0">
+          <ShieldCheck className="w-6 h-6" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+            Command Center
+          </p>
+          <h3 className="text-sm font-extrabold text-gray-900 truncate">
+            {user?.full_name || "Super Admin"}
+          </h3>
         </div>
       </div>
 
+      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
+          <ShieldAlert className="w-3 h-3 text-secondary" />
+          Super Admin
+        </span>
+        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
+          Platform Active
+        </span>
+      </div>
+    </div>
+  );
+
+  // Sidebar footer
+  const sidebarFooter = (
+    <div className="space-y-2">
+      <Link
+        href="/dashboard/create"
+        className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-secondary hover:bg-brand-600 text-white font-semibold text-xs shadow-xs transition-colors"
+      >
+        <Plus className="w-4 h-4" />
+        <span>Buat Event Baru</span>
+      </Link>
+      <button
+        type="button"
+        onClick={() => refetch()}
+        disabled={isFetching}
+        className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-gray-600 hover:bg-gray-100 font-semibold text-xs transition-colors cursor-pointer disabled:opacity-50"
+      >
+        <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? "animate-spin" : ""}`} />
+        <span>{isFetching ? "Memperbarui..." : "Perbarui Metrik"}</span>
+      </button>
+    </div>
+  );
+
+  // Main overview subtab content
+  const overviewContent = (
+    <div className="space-y-8">
       {/* ── Action Required Alert Hub (Only if items pending) ── */}
       {overview?.actionsNeeded && overview.actionsNeeded.total > 0 && (
-        <div className="bg-blue-50/70 border border-blue-200/80 rounded-2xl p-5 shadow-sm">
+        <div className="bg-blue-50/70 border border-blue-200/80 rounded-2xl p-5 shadow-xs">
           <div className="flex items-center justify-between gap-3 mb-3">
             <div className="flex items-center gap-2 text-secondary font-bold text-sm">
               <AlertCircle className="w-4 h-4 text-secondary" />
-              <span>Perlu Tindakan Anda ({overview.actionsNeeded.total} Item Menunggu)</span>
+              <span>
+                Perlu Tindakan Anda ({overview.actionsNeeded.total} Item Menunggu)
+              </span>
             </div>
-            <span className="text-xs text-gray-500 font-medium">Prioritas Verifikasi</span>
+            <span className="text-xs text-gray-500 font-medium">
+              Prioritas Verifikasi
+            </span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {overview.actionsNeeded.pendingApprovals > 0 && (
               <Link
                 href="/dashboard/approvals"
-                className="flex items-center justify-between p-3.5 bg-white rounded-xl border border-gray-100 hover:border-secondary hover:shadow-sm transition-all group"
+                className="flex items-center justify-between p-3.5 bg-white rounded-xl border border-gray-100 hover:border-secondary hover:shadow-xs transition-all group"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-blue-50 text-secondary flex items-center justify-center font-bold text-xs group-hover:bg-secondary group-hover:text-white transition-colors">
@@ -146,7 +167,7 @@ export default function SuperAdminDashboard() {
             {overview.actionsNeeded.pendingSettlements > 0 && (
               <Link
                 href="/dashboard/settlements"
-                className="flex items-center justify-between p-3.5 bg-white rounded-xl border border-gray-100 hover:border-secondary hover:shadow-sm transition-all group"
+                className="flex items-center justify-between p-3.5 bg-white rounded-xl border border-gray-100 hover:border-secondary hover:shadow-xs transition-all group"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-blue-50 text-secondary flex items-center justify-center font-bold text-xs group-hover:bg-secondary group-hover:text-white transition-colors">
@@ -168,7 +189,7 @@ export default function SuperAdminDashboard() {
             {overview.actionsNeeded.unreadInquiries > 0 && (
               <Link
                 href="/dashboard/inbox"
-                className="flex items-center justify-between p-3.5 bg-white rounded-xl border border-gray-100 hover:border-secondary hover:shadow-sm transition-all group"
+                className="flex items-center justify-between p-3.5 bg-white rounded-xl border border-gray-100 hover:border-secondary hover:shadow-xs transition-all group"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-blue-50 text-secondary flex items-center justify-center font-bold text-xs group-hover:bg-secondary group-hover:text-white transition-colors">
@@ -190,16 +211,16 @@ export default function SuperAdminDashboard() {
         </div>
       )}
 
-      {/* ── KPI Metric Cards (On-Brand Mexpo Theme) ── */}
+      {/* ── KPI Metric Cards ── */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-16 text-gray-400 bg-white rounded-2xl border border-gray-100 shadow-sm">
+        <div className="flex items-center justify-center py-16 text-gray-400 bg-white rounded-2xl border border-gray-100 shadow-xs">
           <Loader2 className="w-6 h-6 animate-spin mr-3 text-secondary" />
           <span className="text-sm">Memuat metrik platform Mexpo...</span>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Card 1: Total Event */}
-          <div className="bg-white rounded-2xl p-5 border border-gray-100 hover:border-blue-200 shadow-sm hover:shadow-md transition-all space-y-3">
+          <div className="bg-white rounded-2xl p-5 border border-gray-100 hover:border-blue-200 shadow-xs hover:shadow-md transition-all space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
                 Total Event
@@ -225,7 +246,7 @@ export default function SuperAdminDashboard() {
           </div>
 
           {/* Card 2: Pengguna Terdaftar */}
-          <div className="bg-white rounded-2xl p-5 border border-gray-100 hover:border-blue-200 shadow-sm hover:shadow-md transition-all space-y-3">
+          <div className="bg-white rounded-2xl p-5 border border-gray-100 hover:border-blue-200 shadow-xs hover:shadow-md transition-all space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
                 Pengguna Terdaftar
@@ -249,7 +270,7 @@ export default function SuperAdminDashboard() {
           </div>
 
           {/* Card 3: Gross Volume Tiket */}
-          <div className="bg-white rounded-2xl p-5 border border-gray-100 hover:border-blue-200 shadow-sm hover:shadow-md transition-all space-y-3">
+          <div className="bg-white rounded-2xl p-5 border border-gray-100 hover:border-blue-200 shadow-xs hover:shadow-md transition-all space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
                 Gross Volume Tiket
@@ -270,7 +291,7 @@ export default function SuperAdminDashboard() {
           </div>
 
           {/* Card 4: Kotak Pertanyaan */}
-          <div className="bg-white rounded-2xl p-5 border border-gray-100 hover:border-blue-200 shadow-sm hover:shadow-md transition-all space-y-3">
+          <div className="bg-white rounded-2xl p-5 border border-gray-100 hover:border-blue-200 shadow-xs hover:shadow-md transition-all space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
                 Pesan Pertanyaan
@@ -298,14 +319,14 @@ export default function SuperAdminDashboard() {
         </div>
       )}
 
-      {/* ── Modul Administrasi Utama (Cohesive Mexpo Style) ── */}
+      {/* ── Modul Administrasi Utama ── */}
       <div className="space-y-4">
         <div>
           <h2 className="text-xl font-bold text-gray-900">
-            Modul Administrasi &amp; Kontrol
+            Pusat Modul Operasional &amp; Kontrol
           </h2>
           <p className="text-xs text-gray-500 mt-0.5">
-            Akses langsung panel operasional, approval sistem, verifikasi keuangan, dan CMS publik
+            Akses langsung panel persetujuan event, verifikasi keuangan, akun pengguna, dan CMS publik
           </p>
         </div>
 
@@ -480,7 +501,7 @@ export default function SuperAdminDashboard() {
       {/* ── Recent Activity / Operational Queues ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left: Recent Pending Events */}
-        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-4">
+        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-bold text-gray-900 text-base">
@@ -533,7 +554,7 @@ export default function SuperAdminDashboard() {
         </div>
 
         {/* Right: Recent Inquiries */}
-        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-4">
+        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-bold text-gray-900 text-base">
@@ -603,15 +624,156 @@ export default function SuperAdminDashboard() {
           )}
         </div>
       </div>
+    </div>
+  );
 
-      {/* ── Centralized Event Directory & Management ── */}
-      <div className="space-y-4 pt-2">
-        <EventList
-          hideHero={true}
-          title="Direktori & Manajemen Event"
-          subtitle="Telusuri, pantau status, dan kelola seluruh event dalam ekosistem Mexpo"
-        />
+  // Event list subtab content
+  const eventListContent = (
+    <div className="space-y-4">
+      <EventList
+        hideHero={true}
+        title="Direktori & Manajemen Event"
+        subtitle="Telusuri, pantau status rilis, dan kelola seluruh event dalam ekosistem Mexpo"
+      />
+    </div>
+  );
+
+  // Sidebar navigation groups
+  const tabGroups: SidebarTabGroup[] = [
+    {
+      id: "overview-group",
+      label: "Ringkasan Platform",
+      subTabs: [
+        {
+          id: "dashboard-overview",
+          label: "Dashboard & Metrik",
+          icon: LayoutDashboard,
+          content: overviewContent,
+        },
+        {
+          id: "event-directory",
+          label: "Direktori Seluruh Event",
+          icon: Calendar,
+          content: eventListContent,
+        },
+      ],
+    },
+    {
+      id: "operasional",
+      label: "Operasional & Finansial",
+      subTabs: [
+        {
+          id: "approvals",
+          label: "Persetujuan Event",
+          icon: ShieldAlert,
+          href: "/dashboard/approvals",
+          badge: pendingApprovalsCount > 0 ? pendingApprovalsCount : undefined,
+          badgeColor: "bg-red-50 text-red-700",
+        },
+        {
+          id: "settlements",
+          label: "Settlement & Payout",
+          icon: Wallet,
+          href: "/dashboard/settlements",
+          badge:
+            pendingSettlementsCount > 0 ? pendingSettlementsCount : undefined,
+          badgeColor: "bg-amber-50 text-amber-700",
+        },
+      ],
+    },
+    {
+      id: "users-communication",
+      label: "Pengguna & Komunikasi",
+      subTabs: [
+        {
+          id: "users",
+          label: "Manajemen Pengguna",
+          icon: UserCheck,
+          href: "/dashboard/users",
+        },
+        {
+          id: "inbox",
+          label: "Kotak Pesan Masuk",
+          icon: Inbox,
+          href: "/dashboard/inbox",
+          badge: unreadInquiriesCount > 0 ? unreadInquiriesCount : undefined,
+          badgeColor: "bg-blue-50 text-secondary",
+        },
+      ],
+    },
+    {
+      id: "cms",
+      label: "Kustomisasi CMS",
+      subTabs: [
+        {
+          id: "cms-faq",
+          label: "Kustomisasi FAQ",
+          icon: HelpCircle,
+          href: "/dashboard/cms/faq",
+        },
+        {
+          id: "cms-about",
+          label: "Kustomisasi Halaman About",
+          icon: FileQuestion,
+          href: "/dashboard/cms/about",
+        },
+      ],
+    },
+  ];
+
+  return (
+    <div className="pb-20 max-w-7xl mx-auto space-y-8">
+      {/* ── Top Header with Mexpo Geometric Branding ── */}
+      <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 lg:p-10 shadow-lg border border-blue-400/20 text-white">
+        <GeometricBannerBg className="rounded-3xl" />
+
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="space-y-3 max-w-2xl">
+            <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md text-white border border-white/20 px-3.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider shadow-xs">
+              <ShieldCheck className="w-3.5 h-3.5 text-blue-100" />
+              SuperAdmin Command Center
+            </div>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight font-outfit text-white">
+              Halo, {user?.full_name || "Super Admin"} 👋
+            </h1>
+            <p className="text-blue-50/90 text-sm sm:text-base leading-relaxed">
+              Pusat kendali ekosistem Mexpo. Pantau metrik platform, verifikasi
+              rilis event, kelola akun, transaksi tiket, dan kustomisasi konten secara terpusat.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href="/dashboard/create"
+              className="inline-flex items-center gap-2 bg-white text-secondary hover:bg-blue-50 font-semibold text-xs sm:text-sm px-5 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all"
+            >
+              <Plus className="w-4 h-4 text-secondary" />
+              Buat Event
+            </Link>
+
+            <button
+              onClick={() => refetch()}
+              disabled={isFetching}
+              className="inline-flex items-center gap-2 bg-white/15 hover:bg-white/25 backdrop-blur-md text-white border border-white/20 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all shadow-xs cursor-pointer"
+              title="Perbarui Data"
+            >
+              <RefreshCw
+                className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`}
+              />
+              Perbarui
+            </button>
+          </div>
+        </div>
       </div>
+
+      {/* ── Left Sidebar Main Dashboard Layout ── */}
+      <DashboardSidebarLayout
+        groups={tabGroups}
+        defaultGroupId="overview-group"
+        defaultSubTabId="dashboard-overview"
+        sidebarHeader={sidebarHeader}
+        sidebarFooter={sidebarFooter}
+      />
     </div>
   );
 }

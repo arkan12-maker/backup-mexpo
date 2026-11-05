@@ -1,27 +1,61 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Users, BookOpen, CalendarCheck2,
-  Pencil, Send, Trash2, Crown, Ticket, ScanLine, ClipboardCheck, Gift, BarChart3,
-  CheckCircle2, RotateCcw, CalendarClock, Mic, Handshake, Phone, Award, Wallet } from "lucide-react";
+import {
+  Users,
+  BookOpen,
+  CalendarCheck2,
+  Pencil,
+  Send,
+  Trash2,
+  Crown,
+  Ticket,
+  ScanLine,
+  ClipboardCheck,
+  Gift,
+  BarChart3,
+  CheckCircle2,
+  RotateCcw,
+  CalendarClock,
+  Mic,
+  Handshake,
+  Phone,
+  Award,
+  Wallet,
+  FileText,
+  Calendar,
+} from "lucide-react";
 import { toast } from "sonner";
+import Image from "next/image";
 
 import { Event } from "@/entities/event/event.entity";
 import { useApiMutation } from "@/lib/hooks/useApi";
 import { keys } from "@/lib/query-keys";
-import { publishRequest, deleteEvent, finishEvent, reopenEvent } from "@/services/event.service";
+import {
+  publishRequest,
+  deleteEvent,
+  finishEvent,
+  reopenEvent,
+} from "@/services/event.service";
 import EventHero from "@/features/dashboard/shared/EventHero";
 import EventOverview from "@/features/dashboard/shared/EventOverview";
 import ViewAction from "@/features/dashboard/shared/ViewAction";
 import { getRoleBadge } from "@/shared/utils/role-badge";
-import DashboardTabs, { TabGroup } from "@/features/dashboard/shared/DashboardTabs";
+import DashboardSidebarLayout, {
+  SidebarTabGroup,
+} from "@/features/dashboard/shared/DashboardSidebarLayout";
 import { useConfirm } from "@/shared/components/ui/ConfirmDialog";
 import PageShell from "@/shared/components/ui/PageShell";
 
 import EventForm from "@/features/dashboard/event-form/EventForm";
 import VerificationPage from "@/features/dashboard/verification/VerificationPage";
 import ReportsPage from "@/features/dashboard/reports/ReportsPage";
-import { RundownSection, SpeakersSection, SponsorsSection, ContactsSection } from "@/features/dashboard/manage/EventManager";
+import {
+  RundownSection,
+  SpeakersSection,
+  SponsorsSection,
+  ContactsSection,
+} from "@/features/dashboard/manage/EventManager";
 import RegistrationManager from "@/features/dashboard/registration/RegistrationManager";
 import CheckInTabWrapper from "@/features/dashboard/checkin/CheckInTabWrapper";
 import SouvenirCounterPage from "@/features/dashboard/souvenir/SouvenirCounterPage";
@@ -32,7 +66,9 @@ import CertificateDesignerWrapper from "@/features/dashboard/certificate-designe
 import BadgeDesignerWrapper from "@/features/dashboard/badge-designer/BadgeDesignerWrapper";
 import { PaymentsFeature } from "@/features/dashboard/payments/PaymentsFeature";
 
-interface Props { event: Event }
+interface Props {
+  event: Event;
+}
 
 export default function OwnerView({ event }: Props) {
   const router = useRouter();
@@ -41,13 +77,12 @@ export default function OwnerView({ event }: Props) {
   const isFinished = event.status === "FINISHED";
 
   const detailKey = keys.events.detail(event.uuid);
-
   const { confirm, dialogs } = useConfirm();
 
-  // A3 — owner submits a publish request; super admin approves.
   const publish = useApiMutation(() => publishRequest(event.uuid), {
     invalidate: [detailKey],
-    successMessage: "Permintaan publikasi dikirim. Menunggu persetujuan super admin.",
+    successMessage:
+      "Permintaan publikasi dikirim. Menunggu persetujuan super admin.",
     errorMessage: "Gagal mengirim permintaan publikasi.",
     notify: toast,
     onSuccess: () => router.refresh(),
@@ -88,7 +123,12 @@ export default function OwnerView({ event }: Props) {
   };
 
   const handleFinish = async () => {
-    if (!(await confirm(`Selesaikan event "${event.name}"? Registrasi baru akan ditutup.`))) return;
+    if (
+      !(await confirm(
+        `Selesaikan event "${event.name}"? Registrasi baru akan ditutup.`
+      ))
+    )
+      return;
     finish.mutate();
   };
 
@@ -97,91 +137,252 @@ export default function OwnerView({ event }: Props) {
     reopen.mutate();
   };
 
-  const anyPending = publish.isPending || remove.isPending || finish.isPending || reopen.isPending;
+  const anyPending =
+    publish.isPending || remove.isPending || finish.isPending || reopen.isPending;
 
   const overviewContent = <EventOverview event={event} showStats />;
 
-  const tabGroups: TabGroup[] = [
+  const tabGroups: SidebarTabGroup[] = [
     {
       id: "overview",
       label: "Ringkasan",
       subTabs: [
-        { id: "info", label: "Informasi" },
-        { id: "laporan", label: "Laporan", icon: BarChart3, content: <ReportsPage event={event} /> },
+        { id: "info", label: "Informasi Event", icon: FileText, content: overviewContent },
+        {
+          id: "laporan",
+          label: "Laporan & Analitik",
+          icon: BarChart3,
+          content: <ReportsPage event={event} />,
+        },
       ],
-      content: overviewContent,
     },
     {
       id: "konten",
       label: "Konten Event",
       subTabs: [
-        { id: "edit", label: "Detail Event", icon: Pencil, content: <EventForm event={event} /> },
-        { id: "rundown", label: "Susunan Acara", icon: CalendarClock, content: <RundownSection eventId={event.uuid} /> },
-        { id: "speakers", label: "Pembicara", icon: Mic, content: <SpeakersSection eventId={event.uuid} /> },
-        { id: "sponsors", label: "Sponsor", icon: Handshake, content: <SponsorsSection eventId={event.uuid} /> },
-        { id: "contact", label: "Kontak", icon: Phone, content: <ContactsSection eventId={event.uuid} /> },
-        { id: "sertifikat", label: "Sertifikat", icon: Award, content: <CertificateDesignerWrapper event={event} /> },
-        { id: "id-badge", label: "Desain ID Badge", icon: Ticket, content: <BadgeDesignerWrapper event={event} /> },
+        {
+          id: "edit",
+          label: "Detail & Edit Event",
+          icon: Pencil,
+          content: <EventForm event={event} />,
+        },
+        {
+          id: "rundown",
+          label: "Susunan Acara",
+          icon: CalendarClock,
+          content: <RundownSection eventId={event.uuid} />,
+        },
+        {
+          id: "speakers",
+          label: "Pembicara",
+          icon: Mic,
+          content: <SpeakersSection eventId={event.uuid} />,
+        },
+        {
+          id: "sponsors",
+          label: "Sponsor",
+          icon: Handshake,
+          content: <SponsorsSection eventId={event.uuid} />,
+        },
+        {
+          id: "contact",
+          label: "Kontak",
+          icon: Phone,
+          content: <ContactsSection eventId={event.uuid} />,
+        },
+        {
+          id: "sertifikat",
+          label: "Desain Sertifikat",
+          icon: Award,
+          content: <CertificateDesignerWrapper event={event} />,
+        },
+        {
+          id: "id-badge",
+          label: "Desain ID Badge",
+          icon: Ticket,
+          content: <BadgeDesignerWrapper event={event} />,
+        },
       ],
     },
     {
       id: "manajemen",
       label: "Manajemen",
       subTabs: [
-        { id: "tim", label: "Daftar Tim", icon: Users, content: <TeamManager event={event} /> },
-        { id: "verifikasi", label: "Verifikasi Pendaftar", icon: ClipboardCheck, content: <VerificationPage event={event} /> },
-        { id: "registrasi", label: "Registrasi & Tiket", icon: Ticket, content: <RegistrationManager event={event} /> },
-          { id: "workshop", label: "Lokakarya", icon: BookOpen, content: <WorkshopsManager event={event} /> },
-          { id: "souvenir", label: "Syarat Souvenir", icon: Gift, content: <SouvenirCounterPage event={event} /> },
-          { id: "pembayaran", label: "Pembayaran", icon: Wallet, content: <PaymentsFeature event={event} /> },
+        {
+          id: "tim",
+          label: "Daftar Tim",
+          icon: Users,
+          content: <TeamManager event={event} />,
+        },
+        {
+          id: "verifikasi",
+          label: "Verifikasi Pendaftar",
+          icon: ClipboardCheck,
+          content: <VerificationPage event={event} />,
+        },
+        {
+          id: "registrasi",
+          label: "Registrasi & Tiket",
+          icon: Ticket,
+          content: <RegistrationManager event={event} />,
+        },
+        {
+          id: "workshop",
+          label: "Lokakarya (Workshop)",
+          icon: BookOpen,
+          content: <WorkshopsManager event={event} />,
+        },
+        {
+          id: "souvenir",
+          label: "Syarat Souvenir",
+          icon: Gift,
+          content: <SouvenirCounterPage event={event} />,
+        },
+        {
+          id: "pembayaran",
+          label: "Rekening & Pembayaran",
+          icon: Wallet,
+          content: <PaymentsFeature event={event} />,
+        },
       ],
     },
     {
       id: "operasional",
       label: "Operasional Hari-H",
       subTabs: [
-        { id: "checkin", label: "Check-in Pintu", icon: ScanLine, content: <CheckInTabWrapper event={event} /> },
-        { id: "absensi", label: "Absensi", icon: CalendarCheck2, content: <AttendancePage event={event} /> },
+        {
+          id: "checkin",
+          label: "Check-in Pintu",
+          icon: ScanLine,
+          content: <CheckInTabWrapper event={event} />,
+        },
+        {
+          id: "absensi",
+          label: "Data Absensi",
+          icon: CalendarCheck2,
+          content: <AttendancePage event={event} />,
+        },
       ],
-    }
+    },
   ];
 
+  const sidebarHeader = (
+    <div className="space-y-3">
+      <div className="flex items-center gap-3">
+        <div className="relative w-12 h-12 rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
+          <Image
+            src={event.photo || "/images/cards/card-e.png"}
+            alt={event.name}
+            fill
+            className="object-cover"
+          />
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+            Pengelolaan Event
+          </p>
+          <h3 className="text-sm font-extrabold text-gray-900 truncate">
+            {event.name}
+          </h3>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+          <Crown className="w-3 h-3 text-amber-600" />
+          Pemilik Event
+        </span>
+        <span
+          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+            isPublished
+              ? "bg-emerald-100 text-emerald-700"
+              : isDrafted
+              ? "bg-amber-100 text-amber-700"
+              : "bg-gray-100 text-gray-700"
+          }`}
+        >
+          {event.status}
+        </span>
+      </div>
+    </div>
+  );
+
+  const sidebarFooter = (
+    <div className="space-y-2">
+      {isPublished && (
+        <button
+          type="button"
+          onClick={handleFinish}
+          disabled={anyPending}
+          className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs transition-colors cursor-pointer disabled:opacity-50"
+        >
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          <span>Selesaikan Event</span>
+        </button>
+      )}
+
+      {isFinished && (
+        <button
+          type="button"
+          onClick={handleReopen}
+          disabled={anyPending}
+          className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-secondary hover:bg-secondary/90 text-white font-semibold text-xs transition-colors cursor-pointer disabled:opacity-50"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          <span>Buka Kembali Event</span>
+        </button>
+      )}
+
+      {isDrafted && (
+        <button
+          type="button"
+          onClick={handlePublishRequest}
+          disabled={anyPending}
+          className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors cursor-pointer disabled:opacity-50 shadow-xs"
+        >
+          <Send className="w-3.5 h-3.5" />
+          <span>Ajukan Publikasi</span>
+        </button>
+      )}
+
+      <button
+        type="button"
+        onClick={handleDelete}
+        disabled={anyPending}
+        className="w-full flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-red-600 hover:bg-red-50 font-semibold text-xs transition-colors cursor-pointer disabled:opacity-50"
+      >
+        <Trash2 className="w-3.5 h-3.5" />
+        <span>Hapus Event</span>
+      </button>
+    </div>
+  );
+
   return (
-    <PageShell className="py-10">
-      {/* — Hero — */}
-      <EventHero event={event} roleLabel="Pemilik" roleIcon={Crown} roleBadge={getRoleBadge("OWNER")} />
+    <PageShell className="py-8">
+      {/* ── Top Hero ── */}
+      <EventHero
+        event={event}
+        roleLabel="Pemilik"
+        roleIcon={Crown}
+        roleBadge={getRoleBadge("OWNER")}
+      />
 
       {/* A3 — rejection reason */}
       {event.status === "REJECTED" && event.rejection_reason && (
-        <div className="bg-error-50 mb-6 p-4 border border-error-200 rounded-xl text-error-700 text-sm">
+        <div className="bg-red-50 mb-6 p-4 border border-red-200 rounded-2xl text-red-700 text-sm">
           <strong>Alasan penolakan:</strong> {event.rejection_reason}
         </div>
       )}
 
-      {/* ── Tabs Content ── */}
-            {/* ── Actions ── */}
-      <div className="mb-6 flex flex-wrap items-center gap-3">
-        {isPublished && (
-          <ViewAction onClick={handleFinish} disabled={anyPending} variant="warning">
-            <CheckCircle2 className="w-4 h-4" /> Selesaikan Event
-          </ViewAction>
-        )}
-        {isFinished && (
-          <ViewAction onClick={handleReopen} disabled={anyPending} variant="primary">
-            <RotateCcw className="w-4 h-4" /> Buka Kembali
-          </ViewAction>
-        )}
-        {isDrafted && (
-          <ViewAction onClick={handlePublishRequest} disabled={anyPending} variant="success">
-            <Send className="w-4 h-4" /> Ajukan Publikasi
-          </ViewAction>
-        )}
-        <ViewAction onClick={handleDelete} disabled={anyPending} variant="danger">
-          <Trash2 className="w-4 h-4" /> Hapus Event
-        </ViewAction>
-      </div>
+      {/* ── Main Left-Sidebar Dashboard Layout ── */}
+      <DashboardSidebarLayout
+        groups={tabGroups}
+        defaultGroupId="overview"
+        defaultSubTabId="info"
+        sidebarHeader={sidebarHeader}
+        sidebarFooter={sidebarFooter}
+      />
 
-      <DashboardTabs groups={tabGroups} />
       {dialogs}
     </PageShell>
   );
