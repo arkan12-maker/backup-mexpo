@@ -10,6 +10,7 @@
     "build": "npm --prefix dev-backend-mexpo-new run build && npm --prefix dev-frontend-mexpo-new run build",
     "build:backend": "npm --prefix dev-backend-mexpo-new run build",
     "build:frontend": "npm --prefix dev-frontend-mexpo-new run build",
+    "seed": "npm --prefix dev-backend-mexpo-new run seed",
     "lint": "npm --prefix dev-backend-mexpo-new run lint && npm --prefix dev-frontend-mexpo-new run lint",
     "docker:up": "docker compose up -d",
     "docker:up:build": "docker compose up --build -d",
