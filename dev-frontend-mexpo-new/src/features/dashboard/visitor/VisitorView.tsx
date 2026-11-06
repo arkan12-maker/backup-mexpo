@@ -29,6 +29,8 @@ import { BadgeModal } from "@/features/dashboard/badge/BadgeModal";
 import { checkout } from "@/services/payment.service";
 import { loadSnapScript, payWithSnap } from "@/shared/utils/snap";
 import { PaymentIntent } from "@/entities/payment/payment.entity";
+import Navbar from "@/widgets/Navbar";
+import Footer from "@/widgets/Footer";
 
 interface Props { event: Event }
 
@@ -229,61 +231,75 @@ export default function VisitorView({ event }: Props) {
     }
 
     return (
-      <PageShell className="py-10 flex items-center justify-center min-h-[60vh]">
-        <div className="max-w-md w-full rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center shadow-sm">
-          <div className="mx-auto w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mb-4">
-            <CreditCard className="w-6 h-6 text-amber-600" />
-          </div>
-          <h2 className="text-xl font-bold text-amber-900 mb-2">Menunggu Pembayaran</h2>
-          <p className="text-amber-700 text-sm mb-6">
-            Kamu sudah terdaftar di <strong>{event.name}</strong>, tapi pembayaran tiket belum selesai. Silakan selesaikan pembayaran untuk mengakses dashboard event.
-          </p>
-          <button
-            onClick={handleResumePayment}
-            disabled={paymentBusy}
-            className="w-full inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 px-6 py-3 rounded-xl font-semibold text-white transition-colors"
-          >
-            {paymentBusy ? <Loader2 className="w-5 h-5 animate-spin" /> : <CreditCard className="w-5 h-5" />}
-            Selesaikan Pembayaran
-          </button>
-        </div>
-      </PageShell>
+      <div className="flex flex-col min-h-screen text-gray-900 bg-white">
+        <Navbar />
+        <main className="flex-1 w-full max-w-7xl mx-auto mt-8 px-4 sm:px-6 py-6">
+          <PageShell className="py-10 flex items-center justify-center min-h-[60vh]">
+            <div className="max-w-md w-full rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center shadow-sm">
+              <div className="mx-auto w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mb-4">
+                <CreditCard className="w-6 h-6 text-amber-600" />
+              </div>
+              <h2 className="text-xl font-bold text-amber-900 mb-2">Menunggu Pembayaran</h2>
+              <p className="text-amber-700 text-sm mb-6">
+                Kamu sudah terdaftar di <strong>{event.name}</strong>, tapi pembayaran tiket belum selesai. Silakan selesaikan pembayaran untuk mengakses dashboard event.
+              </p>
+              <button
+                onClick={handleResumePayment}
+                disabled={paymentBusy}
+                className="w-full inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 px-6 py-3 rounded-xl font-semibold text-white transition-colors"
+              >
+                {paymentBusy ? <Loader2 className="w-5 h-5 animate-spin" /> : <CreditCard className="w-5 h-5" />}
+                Selesaikan Pembayaran
+              </button>
+            </div>
+          </PageShell>
+        </main>
+        <Footer />
+      </div>
     );
   }
 
   return (
-    <PageShell className="py-10">
-{/* "?"? Hero "?"? */}
-      <EventHero event={event} roleLabel="Pengunjung" roleIcon={User} roleBadge={getRoleBadge("VISITOR")} />
+    <div className="flex flex-col min-h-screen text-gray-900 bg-white">
+      <Navbar />
 
-      {/* "?"? Actions "?"? */}
-      <div className="flex flex-wrap items-center gap-2 mb-8 justify-end">
-        {isOpen ? (
-          <ViewAction href={`/event/${event.slug ?? event.uuid}/register`} variant="primary">
-            <UserPlus className="w-4 h-4" /> Daftar
-          </ViewAction>
-        ) : (
-          <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-gray-100 text-xs font-medium text-gray-400">
-            Registrasi ditutup
-          </span>
-        )}
-        {userRole && (
-          <>
-            <ViewAction onClick={() => setBadgeOpen(true)} variant="secondary">
-              <IdCard className="w-4 h-4 text-secondary" /> ID Badge
-            </ViewAction>
-            <ViewAction href={`/dashboard/${event.slug ?? event.uuid}/certificates`} variant="secondary">
-              <Award className="w-4 h-4 text-amber-500" /> Sertifikat
-            </ViewAction>
-          </>
-        )}
-      </div>
+      <main className="flex-1 w-full max-w-7xl mx-auto mt-8 px-4 sm:px-6 py-6">
+        <PageShell className="py-10">
+          {/* ── Hero ── */}
+          <EventHero event={event} roleLabel="Pengunjung" roleIcon={User} roleBadge={getRoleBadge("VISITOR")} />
 
-      {/* "?"? Tabs Content "?"? */}
-      <DashboardTabs groups={tabGroups} />
+          {/* ── Actions ── */}
+          <div className="flex flex-wrap items-center gap-2 mb-8 justify-end">
+            {isOpen ? (
+              <ViewAction href={`/event/${event.slug ?? event.uuid}/register`} variant="primary">
+                <UserPlus className="w-4 h-4" /> Daftar
+              </ViewAction>
+            ) : (
+              <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-gray-100 text-xs font-medium text-gray-400">
+                Registrasi ditutup
+              </span>
+            )}
+            {userRole && (
+              <>
+                <ViewAction onClick={() => setBadgeOpen(true)} variant="secondary">
+                  <IdCard className="w-4 h-4 text-secondary" /> ID Badge
+                </ViewAction>
+                <ViewAction href={`/dashboard/${event.slug ?? event.uuid}/certificates`} variant="secondary">
+                  <Award className="w-4 h-4 text-amber-500" /> Sertifikat
+                </ViewAction>
+              </>
+            )}
+          </div>
 
-      {/* ID Badge popup (PDF) — replaces the old /dashboard/[uuid]/badge page. */}
-      <BadgeModal event={event} open={badgeOpen} onClose={() => setBadgeOpen(false)} role={userRole || "VISITOR"} />
-    </PageShell>
+          {/* ── Tabs Content ── */}
+          <DashboardTabs groups={tabGroups} />
+
+          {/* ID Badge popup (PDF) — replaces the old /dashboard/[uuid]/badge page. */}
+          <BadgeModal event={event} open={badgeOpen} onClose={() => setBadgeOpen(false)} role={userRole || "VISITOR"} />
+        </PageShell>
+      </main>
+
+      <Footer />
+    </div>
   );
 }

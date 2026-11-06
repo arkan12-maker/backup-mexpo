@@ -1,5 +1,5 @@
 // src/app/(dashboard)/layout.tsx
-// Dashboard shell — uses the public Navbar + Footer on a plain white surface.
+// Dashboard shell — clean edge-to-edge layout for modern sidebar management dashboards.
 //
 // Server-side auth guard (second layer, on top of src/proxy.ts):
 // The proxy only runs on full (hard) navigations — it does NOT protect
@@ -10,8 +10,6 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import Navbar from "@/widgets/Navbar";
-import Footer from "@/widgets/Footer";
 
 export default async function DashboardLayout({
   children,
@@ -26,14 +24,8 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex flex-col min-h-screen text-gray-900">
-      <Navbar />
-
-      <main className="flex-1 bg-white w-full max-w-7xl mx-auto mt-8 px-4 sm:px-6 py-6">
-        {children}
-      </main>
-
-      <Footer />
+    <div className="min-h-screen w-full bg-slate-50 text-gray-900 flex flex-col">
+      {children}
     </div>
   );
 }
