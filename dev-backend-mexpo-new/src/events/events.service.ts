@@ -222,7 +222,7 @@ export class EventsService {
     }
   }
 
-  async findOne(id: string, userId?: string) {
+  async findOne(id: string, userId?: string, userRole?: UserRole) {
     try {
       const findExistingEvent = await this.prisma.events.findFirst({
         where: isUuid(id) ? { uuid: id } : { slug: id },
@@ -266,8 +266,14 @@ export class EventsService {
         throw new NotFoundException(`Event doesn't exists`);
       }
 
+      let userRoles = findExistingEvent.userEventRoles;
+      if (userRole === UserRole.SUPERADMIN) {
+        userRoles = [{ role: EventRole.OWNER, status: 'APPROVED' } as any];
+      }
+
       const mappedEvent = {
         ...findExistingEvent,
+        userEventRoles: userRoles,
         count_user_registration: findExistingEvent._count?.userEventRoles ?? 0,
         count_tenants: findExistingEvent._count?.tenants ?? 0,
         count_workshops: findExistingEvent._count?.workshops ?? 0,

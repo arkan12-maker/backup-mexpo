@@ -1,7 +1,7 @@
 // src/shared/hooks/useList.ts
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { QueryKey } from "@tanstack/react-query";
 
@@ -29,6 +29,7 @@ export function useList<T>(
   fetcher: (query: Record<string, string>) => Promise<ListResult<T>>,
   deps: unknown[],
   initialPageSize = 10,
+  initialFilters: Record<string, string> = {},
 ) {
   const queryClient = useQueryClient();
 
@@ -37,10 +38,10 @@ export function useList<T>(
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-  const [filters, setFilters] = useState<Record<string, string>>({});
+  const [filters, setFilters] = useState<Record<string, string>>(initialFilters);
 
   // Stable base key for this list instance (prefix of every page's key).
-  const baseKey: QueryKey = ["useList", ...deps];
+  const baseKey: QueryKey = useMemo(() => ["useList", ...deps], deps);
 
   const query = useQuery<ListResult<T>>({
     queryKey: [
@@ -67,40 +68,55 @@ export function useList<T>(
   });
 
   const items = query.data?.data ?? [];
-  const total =
-    ((query.data?.meta as { counts?: number } | undefined)?.counts) ??
-    items.length;
+  const metaObj = query.data?.meta as { counts?: number; total?: number } | undefined;
+  const total = metaObj?.counts ?? metaObj?.total ?? items.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
-  const applySearch = (value: string) => {
-    setSearch(value);
+  const handleSetPage = useCallback((newPage: number | ((prev: number) => number)) => {
+    setPage(newPage);
+  }, []);
+
+  const handleSetPageSize = useCallback((newSize: number) => {
+    setPageSize(newSize);
     setPage(1);
-  };
+  }, []);
+
+  const applySearch = useCallback((value: string) => {
+    setSearch((prev) => {
+      if (prev === value) return prev;
+      return value;
+    });
+    setPage(1);
+  }, []);
 
   /** Set/change the active sort field + direction (server-side). */
-  const applySort = (field: string, dir: "asc" | "desc") => {
+  const applySort = useCallback((field: string, dir: "asc" | "desc") => {
     setSortBy(field);
     setSortDir(dir);
     setPage(1);
-  };
+  }, []);
 
-  const applyFilter = (key: string, value: string) => {
-    setFilters((f) => ({ ...f, [key]: value }));
+  const applyFilter = useCallback((key: string, value: string) => {
+    setFilters((prev) => {
+      if (prev[key] === value) return prev;
+      return { ...prev, [key]: value };
+    });
     setPage(1);
-  };
+  }, []);
 
   /** Re-run the current query (all pages) after a mutation. */
-  const refetch = () =>
-    queryClient.invalidateQueries({ queryKey: baseKey });
+  const refetch = useCallback(() => {
+    return queryClient.invalidateQueries({ queryKey: baseKey });
+  }, [queryClient, baseKey]);
 
   return {
     items,
     total,
     totalPages,
     page,
-    setPage,
+    setPage: handleSetPage,
     pageSize,
-    setPageSize,
+    setPageSize: handleSetPageSize,
     search,
     applySearch,
     sortBy,

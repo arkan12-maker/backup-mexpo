@@ -186,7 +186,7 @@ export default function SettlementList() {
           <div className="mt-6">
             <DataPagination
               currentPage={list.page}
-              totalPages={list.totalPages}
+              totalPages={Math.max(1, Math.ceil(filteredEvents.length / list.pageSize))}
               itemsPerPage={list.pageSize}
               totalItems={filteredEvents.length}
               onPageChange={list.setPage}

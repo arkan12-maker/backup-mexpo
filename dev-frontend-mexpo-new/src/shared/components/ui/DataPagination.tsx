@@ -56,22 +56,26 @@ function PaginationItem({ ...props }: React.ComponentProps<"li">) {
 
 type PaginationLinkProps = {
   isActive?: boolean
-} & { size?: keyof typeof LINK_SIZES } & React.ComponentProps<"a">
+} & { size?: keyof typeof LINK_SIZES } & React.ButtonHTMLAttributes<HTMLButtonElement>
 
 function PaginationLink({
   className,
   isActive,
   size = "icon",
+  type = "button",
   ...props
 }: PaginationLinkProps) {
   return (
-    <a
+    <button
+      type={type}
       aria-current={isActive ? "page" : undefined}
       data-slot="pagination-link"
       data-active={isActive}
       className={cn(
         LINK_BASE,
-        isActive ? LINK_VARIANTS.outline : LINK_VARIANTS.ghost,
+        isActive
+          ? "bg-secondary text-white font-bold border-secondary shadow-xs hover:bg-secondary/90 hover:text-white"
+          : LINK_VARIANTS.ghost,
         LINK_SIZES[size],
         className,
       )}
@@ -233,9 +237,10 @@ export const DataPagination = ({
             <PaginationItem>
               <PaginationPrevious
                 onClick={() => onPageChange(Math.max(currentPage - 1, 1))}
-                aria-disabled={currentPage === 1}
+                disabled={currentPage <= 1}
+                aria-disabled={currentPage <= 1}
                 className={
-                  currentPage === 1
+                  currentPage <= 1
                     ? 'pointer-events-none opacity-50'
                     : 'cursor-pointer'
                 }
@@ -265,9 +270,10 @@ export const DataPagination = ({
             <PaginationItem>
               <PaginationNext
                 onClick={() => onPageChange(Math.min(currentPage + 1, totalPages))}
-                aria-disabled={currentPage === totalPages}
+                disabled={currentPage >= totalPages}
+                aria-disabled={currentPage >= totalPages}
                 className={
-                  currentPage === totalPages
+                  currentPage >= totalPages
                     ? 'pointer-events-none opacity-50'
                     : 'cursor-pointer'
                 }

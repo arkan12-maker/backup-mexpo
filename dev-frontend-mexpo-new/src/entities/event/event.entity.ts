@@ -142,7 +142,11 @@ export interface UserEventRole {
 
 
 export function getEventRole(event: Event): EventRoleType {
-  return event.userEventRoles?.[0]?.role ?? "VISITOR";
+  const roles = event.userEventRoles || [];
+  if (roles.some((r) => r.role === "OWNER")) return "OWNER";
+  if (roles.some((r) => r.role === "COMMITTEE")) return "COMMITTEE";
+  if (roles.some((r) => r.role === "TENANT")) return "TENANT";
+  return roles[0]?.role ?? "VISITOR";
 }
 
 

@@ -157,7 +157,11 @@ export class EventsController {
     @Param('id') id: string,
     @Request() request: authType.AuthRequest,
   ) {
-    return this.eventsService.findOne(id, request.user.uuid);
+    return this.eventsService.findOne(
+      id,
+      request.user.uuid,
+      request.user.role as UserRole,
+    );
   }
 
   @Get(':id')
