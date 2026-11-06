@@ -40,12 +40,13 @@ export default function EventdetailPage({ eventData }: { eventData: Event }) {
         hasSponsors={sponsors.length > 0}
       />
 
-      {/* 4. Agenda & Rundown Timeline */}
-      <AgendaSection rundown={rundown} />
-
+      {rundown.length > 0 && (
+        <AgendaSection rundown={rundown} />
+      )}
       {/* 5. Pembicara Utama */}
-      <SpeakersSection speakers={speakers} />
-
+      {speakers.length > 0 && (
+        <SpeakersSection speakers={speakers} />
+      )}
       {/* 6. Alur Pendaftaran (3 Langkah Berbasis QR) */}
       <RegistrationFlow />
 

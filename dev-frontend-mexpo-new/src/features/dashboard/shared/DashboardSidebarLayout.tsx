@@ -35,6 +35,9 @@ interface DashboardSidebarLayoutProps {
   groups: SidebarTabGroup[];
   defaultGroupId?: string;
   defaultSubTabId?: string;
+  activeGroupId?: string;
+  activeSubTabId?: string;
+  onTabChange?: (groupId: string, subTabId: string) => void;
   sidebarHeader?: React.ReactNode;
   sidebarFooter?: React.ReactNode;
   topHeader?: React.ReactNode;
@@ -47,6 +50,9 @@ export default function DashboardSidebarLayout({
   groups,
   defaultGroupId,
   defaultSubTabId,
+  activeGroupId,
+  activeSubTabId,
+  onTabChange,
   sidebarHeader,
   sidebarFooter,
   topHeader,
@@ -54,21 +60,25 @@ export default function DashboardSidebarLayout({
   backHref = "/dashboard",
   backLabel = "Kembali ke Dashboard",
 }: DashboardSidebarLayoutProps) {
-  const [activeGroup, setActiveGroup] = useState<string>(
+  const [internalGroup, setInternalGroup] = useState<string>(
     defaultGroupId || groups[0]?.id || ""
   );
-  const [activeSub, setActiveSub] = useState<string>(
+  const [internalSub, setInternalSub] = useState<string>(
     defaultSubTabId || groups[0]?.subTabs[0]?.id || ""
   );
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const currentGroup = groups.find((g) => g.id === activeGroup);
-  const currentSub = currentGroup?.subTabs.find((s) => s.id === activeSub);
+  const activeGroup = activeGroupId ?? internalGroup;
+  const activeSub = activeSubTabId ?? internalSub;
+
+  const currentGroup = groups.find((g) => g.id === activeGroup) || groups[0];
+  const currentSub = currentGroup?.subTabs.find((s) => s.id === activeSub) || currentGroup?.subTabs[0];
 
   const handleSelectSubTab = (group: SidebarTabGroup, sub: SidebarSubTab) => {
-    setActiveGroup(group.id);
-    setActiveSub(sub.id);
+    if (activeGroupId === undefined) setInternalGroup(group.id);
+    if (activeSubTabId === undefined) setInternalSub(sub.id);
+    if (onTabChange) onTabChange(group.id, sub.id);
     if (sub.onClick) sub.onClick();
     setMobileMenuOpen(false);
   };
