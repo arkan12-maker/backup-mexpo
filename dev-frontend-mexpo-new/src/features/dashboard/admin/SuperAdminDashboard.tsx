@@ -93,12 +93,9 @@ export default function SuperAdminDashboard() {
 
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md text-white border border-white/20 px-3.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider shadow-sm">
-              <ShieldCheck className="w-3.5 h-3.5 text-blue-100" />
-              SuperAdmin Command Center
-            </div>
+           
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight font-outfit text-white">
-              Halo, {user?.full_name || "Super Admin"} 👋
+              Halo, {user?.full_name || "Super Admin"} 
             </h1>
             <p className="text-blue-50/90 text-sm sm:text-base leading-relaxed">
               Pusat kendali ekosistem Mexpo. Pantau metrik platform, verifikasi
