@@ -294,8 +294,8 @@ export default function OwnerView({ event }: Props) {
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5 pt-1">
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
-          <Crown className="w-3 h-3 text-amber-600" />
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-secondary border border-blue-100">
+          <Crown className="w-3 h-3 text-secondary" />
           Pemilik Event
         </span>
         <span

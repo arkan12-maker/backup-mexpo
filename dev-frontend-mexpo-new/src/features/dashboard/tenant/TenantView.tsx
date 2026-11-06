@@ -158,25 +158,24 @@ export default function TenantView({ event }: Props) {
   const sidebarHeader = (
     <div className="space-y-3">
       <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-200 text-teal-600 flex items-center justify-center shrink-0 shadow-xs">
-          <Store className="w-6 h-6 text-teal-600" />
+        <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 text-secondary flex items-center justify-center shrink-0">
+          <Store className="w-5 h-5 text-secondary" />
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
             Portal Tenant
           </p>
-          <h3 className="text-base font-extrabold text-gray-900 truncate">
+          <h3 className="text-sm font-bold text-gray-900 truncate">
             {tenant?.name || "Booth Tenant"}
           </h3>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 pt-1">
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-teal-100 text-teal-800">
-          <Sparkles className="w-3 h-3" />
+      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-secondary border border-blue-100">
           Penyewa Booth
         </span>
-        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-700">
+        <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600 truncate max-w-[140px]">
           {event.name}
         </span>
       </div>

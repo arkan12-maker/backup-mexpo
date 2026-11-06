@@ -276,8 +276,8 @@ export default function CommitteeView({ event }: Props) {
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5 pt-1">
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
-          <ShieldCheck className="w-3 h-3 text-blue-600" />
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-secondary border border-blue-100">
+          <ShieldCheck className="w-3 h-3 text-secondary" />
           Panitia Event
         </span>
         <span

@@ -74,7 +74,7 @@ export default function DashboardSidebarLayout({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex h-screen w-screen overflow-hidden bg-slate-50 text-slate-900 font-sans antialiased">
+    <div className="fixed inset-0 z-[1000] flex h-screen w-screen overflow-hidden bg-slate-50 text-slate-900 font-sans antialiased">
       {/* ── Mobile Backdrop ── */}
       {mobileMenuOpen && (
         <div

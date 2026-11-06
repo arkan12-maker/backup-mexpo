@@ -191,76 +191,75 @@ export default function TenantSalesOverview({
       {/* ── 4 Main Summary Cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Omzet */}
-        <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-xs hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-              Total Omzet (Pendapatan)
+        <div className="p-5 rounded-2xl bg-white border border-gray-200/80 shadow-2xs space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Total Omzet
             </span>
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-secondary flex items-center justify-center shrink-0">
-              <DollarSign className="w-5 h-5 text-secondary" />
+            <div className="w-9 h-9 rounded-xl bg-blue-50 text-secondary flex items-center justify-center shrink-0">
+              <Receipt className="w-4 h-4 text-secondary" />
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-gray-900 tracking-tight">
+          <div className="text-2xl font-bold text-gray-900 tracking-tight font-mono">
             {formatIDR(stats.totalRevenue)}
           </div>
-          <div className="flex items-center gap-1 mt-2 text-xs text-emerald-600 font-semibold">
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span>Dari {stats.paidTransactions} transaksi berhasil</span>
-          </div>
+          <p className="text-xs text-gray-500">
+            {stats.paidTransactions} transaksi berhasil
+          </p>
         </div>
 
         {/* Total Transaksi */}
-        <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-xs hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+        <div className="p-5 rounded-2xl bg-white border border-gray-200/80 shadow-2xs space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
               Total Transaksi
             </span>
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-              <Receipt className="w-5 h-5 text-emerald-600" />
+            <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
+              <Receipt className="w-4 h-4 text-slate-700" />
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-gray-900 tracking-tight">
-            {stats.totalTransactions} <span className="text-sm font-semibold text-gray-400">Order</span>
+          <div className="text-2xl font-bold text-gray-900 tracking-tight font-mono">
+            {stats.totalTransactions}
           </div>
-          <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
-            <span>{stats.totalTransactions - stats.paidTransactions} transaksi belum lunas</span>
-          </div>
+          <p className="text-xs text-gray-500">
+            {stats.paidTransactions} lunas • {stats.totalTransactions - stats.paidTransactions} belum
+          </p>
         </div>
 
         {/* Rata-Rata Order (AOV) */}
-        <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-xs hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-              Rata-Rata Order (AOV)
+        <div className="p-5 rounded-2xl bg-white border border-gray-200/80 shadow-2xs space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Rata-Rata Order
             </span>
-            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
-              <ArrowUpRight className="w-5 h-5 text-purple-600" />
+            <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
+              <Banknote className="w-4 h-4 text-slate-700" />
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-gray-900 tracking-tight">
+          <div className="text-2xl font-bold text-gray-900 tracking-tight font-mono">
             {formatIDR(stats.aov)}
           </div>
-          <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
-            <span>Rata-rata belanja per pembeli</span>
-          </div>
+          <p className="text-xs text-gray-500">
+            Rata-rata per transaksi
+          </p>
         </div>
 
         {/* Item Terjual */}
-        <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-xs hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+        <div className="p-5 rounded-2xl bg-white border border-gray-200/80 shadow-2xs space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
               Produk Terjual
             </span>
-            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-              <ShoppingBag className="w-5 h-5 text-amber-600" />
+            <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
+              <ShoppingBag className="w-4 h-4 text-slate-700" />
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-gray-900 tracking-tight">
-            {stats.totalItemsSold} <span className="text-sm font-semibold text-gray-400">Item</span>
+          <div className="text-2xl font-bold text-gray-900 tracking-tight font-mono">
+            {stats.totalItemsSold}
           </div>
-          <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
-            <span>Dari {(products ?? []).length} katalog produk terdaftar</span>
-          </div>
+          <p className="text-xs text-gray-500">
+            Dari {(products ?? []).length} jenis produk
+          </p>
         </div>
       </div>
 
@@ -373,52 +372,52 @@ export default function TenantSalesOverview({
               Distribusi metode bayar yang digunakan pembeli.
             </p>
 
-            <div className="space-y-3.5">
+            <div className="space-y-3">
               {/* Tunai / Cash */}
-              <div className="flex items-center justify-between p-3.5 rounded-xl bg-gray-50/80 border border-gray-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                    <Banknote className="w-4 h-4" />
+              <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
+                    <Banknote className="w-3.5 h-3.5" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-gray-800">Tunai (Cash)</p>
-                    <p className="text-[11px] text-gray-400">Pembayaran langsung</p>
+                    <p className="text-xs font-semibold text-gray-800">Tunai (Cash)</p>
+                    <p className="text-[10px] text-gray-400">Pembayaran fisik</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs font-bold text-gray-900">{stats.methods.CASH} Order</span>
+                  <span className="text-xs font-bold text-gray-900">{stats.methods.CASH}</span>
                 </div>
               </div>
 
               {/* QRIS */}
-              <div className="flex items-center justify-between p-3.5 rounded-xl bg-gray-50/80 border border-gray-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-blue-100 text-secondary flex items-center justify-center shrink-0">
-                    <QrCode className="w-4 h-4" />
+              <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-blue-50 text-secondary flex items-center justify-center shrink-0">
+                    <QrCode className="w-3.5 h-3.5" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-gray-800">QRIS</p>
-                    <p className="text-[11px] text-gray-400">Scan dompet digital</p>
+                    <p className="text-xs font-semibold text-gray-800">QRIS</p>
+                    <p className="text-[10px] text-gray-400">Dompet digital</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs font-bold text-gray-900">{stats.methods.QRIS} Order</span>
+                  <span className="text-xs font-bold text-gray-900">{stats.methods.QRIS}</span>
                 </div>
               </div>
 
               {/* Transfer */}
-              <div className="flex items-center justify-between p-3.5 rounded-xl bg-gray-50/80 border border-gray-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
-                    <CreditCard className="w-4 h-4" />
+              <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
+                    <CreditCard className="w-3.5 h-3.5" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-gray-800">Transfer Bank</p>
-                    <p className="text-[11px] text-gray-400">Transfer rekening</p>
+                    <p className="text-xs font-semibold text-gray-800">Transfer Bank</p>
+                    <p className="text-[10px] text-gray-400">Rekening</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs font-bold text-gray-900">{stats.methods.TRANSFER} Order</span>
+                  <span className="text-xs font-bold text-gray-900">{stats.methods.TRANSFER}</span>
                 </div>
               </div>
             </div>
@@ -478,8 +477,8 @@ export default function TenantSalesOverview({
                       </p>
                     </div>
                   </div>
-                  <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold shrink-0">
-                    {p.qty} Terjual
+                  <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold shrink-0">
+                    {p.qty} terjual
                   </span>
                 </div>
               ))}
@@ -532,8 +531,8 @@ export default function TenantSalesOverview({
                       {formatIDR(t.amount)}
                     </p>
                     <span
-                      className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        t.paid ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                      className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                        t.paid ? "bg-blue-50 text-secondary" : "bg-gray-100 text-gray-600"
                       }`}
                     >
                       {t.paid ? "Lunas" : "Belum Lunas"}
