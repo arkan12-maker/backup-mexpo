@@ -78,6 +78,11 @@ export function TenantsTab({ event }: Props) {
     },
   );
 
+  const activeStatus = tenants.filters.status;
+  const visibleTenants = activeStatus
+    ? tenants.items.filter((t) => t.status === activeStatus)
+    : tenants.items;
+
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -107,12 +112,12 @@ export function TenantsTab({ event }: Props) {
       
       {tenants.loading ? (
         <LoadingState type="skeleton-list" count={4} className="py-4" />
-      ) : tenants.items.length === 0 ? (
+      ) : visibleTenants.length === 0 ? (
         <EmptyState title="Tidak ada penyewa." />
       ) : (
         <div className="mb-6">
           <div className="space-y-3">
-            {tenants.items.map((t) => (
+            {visibleTenants.map((t) => (
               <div key={t.uuid} className="flex items-center gap-3 bg-white px-4 py-3 border border-gray-100 rounded-xl transition-shadow hover:shadow-sm">
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-900 text-sm">{t.name}</p>

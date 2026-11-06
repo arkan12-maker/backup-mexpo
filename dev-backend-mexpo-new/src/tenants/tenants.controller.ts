@@ -136,7 +136,12 @@ export class TenantsController {
     @Query() query: QueryTenantDto,
     @Request() request: authType.AuthRequest,
   ) {
-    return this.tenantsService.findAll(event_id, query, request.user.uuid);
+    return this.tenantsService.findAll(
+      event_id,
+      query,
+      request.user.uuid,
+      request.user.role as any,
+    );
   }
 
   @Put('verify/member/:id')

@@ -44,6 +44,7 @@ export class EventUsersService {
     userId: string,
     createEventUserDto?: CreateEventUserDto,
     role?: EventRole,
+    userRole?: string,
   ) {
     try {
       const findEvent = await this.prisma.events.findFirst({
@@ -54,6 +55,72 @@ export class EventUsersService {
       }
 
       if (role && role === `VISITOR`) {
+        if (createEventUserDto?.email) {
+          /** assume that process invite by event manager (owner/committee) or superadmin */
+          if (userRole !== 'SUPERADMIN') {
+            const isManager = await this.prisma.user_event_roles.findFirst({
+              where: {
+                event_id,
+                user_id: userId,
+                role: { in: [`OWNER`, `COMMITTEE`] },
+                status: `APPROVED`,
+              },
+            });
+            if (!isManager) {
+              throw new ForbiddenException(
+                `Only approved owner or committee can invite visitors to ${findEvent.name}`,
+              );
+            }
+          }
+
+          const findUser = await this.prisma.users.findFirst({
+            where: { email: createEventUserDto.email, is_active: true },
+          });
+          if (!findUser) {
+            throw new NotFoundException(`Email is not registered`);
+          }
+
+          const findExistingVisitor =
+            await this.prisma.user_event_roles.findFirst({
+              where: { event_id, user_id: findUser.uuid },
+            });
+          if (findExistingVisitor) {
+            throw new ConflictException(
+              `User is already registered as ${findExistingVisitor.role} at ${findEvent.name}`,
+            );
+          }
+
+          const currentVisitor = await this.prisma.user_event_roles.count({
+            where: { event_id, role: `VISITOR` },
+          });
+          if (findEvent.quota > 0 && currentVisitor + 1 > findEvent.quota) {
+            throw new ConflictException(
+              `Sorry, quota of ${findEvent.name} has reached limit`,
+            );
+          }
+
+          const newVisitor = await this.prisma.user_event_roles.create({
+            data: {
+              event_id,
+              role: `VISITOR`,
+              status: `APPROVED`,
+              user_id: findUser.uuid,
+              created_by: userId,
+              updated_by: userId,
+            },
+          });
+
+          this.sendParticipantTicketEmail(event_id, findUser.uuid).catch((err) =>
+            console.error('Failed auto-sending ticket email upon invite:', err),
+          );
+
+          return {
+            success: true,
+            message: `New visitor of ${findEvent.name} has been invited successfully`,
+            data: newVisitor,
+          };
+        }
+
         const findExistingVisitor =
           await this.prisma.user_event_roles.findFirst({
             where: { event_id, user_id: userId },
@@ -108,14 +175,21 @@ export class EventUsersService {
 
       if (role && role === `COMMITTEE`) {
         if (createEventUserDto?.email) {
-          /** assume that process create by event's owner */
-          const findEventOwner = await this.prisma.user_event_roles.findFirst({
-            where: { user_id: userId, role: `OWNER`, event_id },
-          });
-          if (!findEventOwner)
-            throw new ConflictException(
-              `User is not as owner at ${findEvent.name}`,
-            );
+          /** assume that process create by event's owner or superadmin */
+          if (userRole !== 'SUPERADMIN') {
+            const findEventOwner = await this.prisma.user_event_roles.findFirst({
+              where: {
+                user_id: userId,
+                role: `OWNER`,
+                event_id,
+                status: `APPROVED`,
+              },
+            });
+            if (!findEventOwner)
+              throw new ConflictException(
+                `User is not as owner at ${findEvent.name}`,
+              );
+          }
 
           const findUser = await this.prisma.users.findFirst({
             where: { email: createEventUserDto.email, is_active: true },
@@ -130,7 +204,7 @@ export class EventUsersService {
             });
           if (findExistingCommitee) {
             throw new ConflictException(
-              `You have already to be committee at ${findEvent.name}`,
+              `User is already registered as ${findExistingCommitee.role} at ${findEvent.name}`,
             );
           }
           const newCommitee = await this.prisma.user_event_roles.create({
@@ -180,6 +254,60 @@ export class EventUsersService {
       }
 
       if (role && role == `TENANT`) {
+        if (createEventUserDto?.email) {
+          /** assume that process invite by event manager (owner/committee) or superadmin */
+          if (userRole !== 'SUPERADMIN') {
+            const findEventManager =
+              await this.prisma.user_event_roles.findFirst({
+                where: {
+                  user_id: userId,
+                  role: { in: [`OWNER`, `COMMITTEE`] },
+                  event_id,
+                  status: `APPROVED`,
+                },
+              });
+            if (!findEventManager) {
+              throw new ForbiddenException(
+                `Only approved owner or committee can invite tenant to ${findEvent.name}`,
+              );
+            }
+          }
+
+          const findUser = await this.prisma.users.findFirst({
+            where: { email: createEventUserDto.email, is_active: true },
+          });
+          if (!findUser) {
+            throw new NotFoundException(`Email is not registered`);
+          }
+
+          const findExistingTenant =
+            await this.prisma.user_event_roles.findFirst({
+              where: { event_id, user_id: findUser.uuid },
+            });
+          if (findExistingTenant) {
+            throw new ConflictException(
+              `User is already registered as ${findExistingTenant.role} at ${findEvent.name}`,
+            );
+          }
+
+          const newTenant = await this.prisma.user_event_roles.create({
+            data: {
+              event_id,
+              role: `TENANT`,
+              status: `APPROVED`,
+              user_id: findUser.uuid,
+              created_by: userId,
+              updated_by: userId,
+            },
+          });
+
+          return {
+            success: true,
+            message: `New tenant of ${findEvent.name} has been invited successfully`,
+            data: newTenant,
+          };
+        }
+
         /** assume that process create by themselves */
         const findExistingTenant = await this.prisma.user_event_roles.findFirst(
           {
@@ -217,7 +345,12 @@ export class EventUsersService {
     }
   }
 
-  async findAll(event_id: string, query: QueryEventUserDto, userId: string) {
+  async findAll(
+    event_id: string,
+    query: QueryEventUserDto,
+    userId: string,
+    userRole?: string,
+  ) {
     try {
       const findEvent = await this.prisma.events.findFirst({
         where: { uuid: event_id },
@@ -226,17 +359,19 @@ export class EventUsersService {
         throw new NotFoundException(`Event is doesn't exists`);
       }
 
-      const findEventUser = await this.prisma.user_event_roles.findFirst({
-        where: {
-          event_id,
-          user_id: userId,
-          role: { in: [`COMMITTEE`, `OWNER`] },
-        },
-      });
-      if (!findEventUser) {
-        throw new ForbiddenException(
-          `Sorry, you can't fetch sponsor for ${findEvent.name}`,
-        );
+      if (userRole !== 'SUPERADMIN') {
+        const findEventUser = await this.prisma.user_event_roles.findFirst({
+          where: {
+            event_id,
+            user_id: userId,
+            role: { in: [`COMMITTEE`, `OWNER`] },
+          },
+        });
+        if (!findEventUser) {
+          throw new ForbiddenException(
+            `Sorry, you don't have permission to access event users for ${findEvent.name}`,
+          );
+        }
       }
       const { page, quantity, search, status, role } = query;
       const take = quantity ?? undefined;
@@ -342,6 +477,7 @@ export class EventUsersService {
     id: string,
     updateEventUserDto: UpdateEventUserDto,
     userId: string,
+    userRole?: string,
   ) {
     try {
       const findEventUser = await this.prisma.user_event_roles.findFirst({
@@ -351,18 +487,20 @@ export class EventUsersService {
         throw new NotFoundException(`User Event doesn't exists`);
       }
 
-      const findExistingOwner = await this.prisma.user_event_roles.findFirst({
-        where: {
-          event_id: findEventUser.event_id,
-          user_id: userId,
-          role: { in: [`OWNER`, `COMMITTEE`] },
-          status: `APPROVED`,
-        },
-      });
-      if (!findExistingOwner) {
-        throw new ConflictException(
-          `Sorry, only approved owner/commitee of event can update this user role`,
-        );
+      if (userRole !== 'SUPERADMIN') {
+        const findExistingOwner = await this.prisma.user_event_roles.findFirst({
+          where: {
+            event_id: findEventUser.event_id,
+            user_id: userId,
+            role: { in: [`OWNER`, `COMMITTEE`] },
+            status: `APPROVED`,
+          },
+        });
+        if (!findExistingOwner) {
+          throw new ConflictException(
+            `Sorry, only approved owner/commitee of event can update this user role`,
+          );
+        }
       }
 
       const { status, role } = updateEventUserDto;
@@ -375,19 +513,8 @@ export class EventUsersService {
         },
       });
 
-      /** delete row if rejected */
-      if (status && status === `REJECTED`) {
-        await this.prisma.user_event_roles.delete({ where: { uuid: id } });
-      }
-
       if (findEventUser.role === `TENANT`) {
-        /** delete row if rejected */
-        if (status && status === `REJECTED`) {
-          await this.prisma.tenant_members.deleteMany({
-            where: { user_id: findEventUser.user_id },
-          });
-        }
-        if (status && status === `APPROVED`) {
+        if (status && (status === `REJECTED` || status === `APPROVED`)) {
           await this.prisma.tenant_members.updateMany({
             where: { user_id: findEventUser.user_id },
             data: { status },
@@ -418,7 +545,7 @@ export class EventUsersService {
     }
   }
 
-  async remove(id: string, userId: string) {
+  async remove(id: string, userId: string, userRole?: string) {
     try {
       const findEventUser = await this.prisma.user_event_roles.findFirst({
         where: { uuid: id },
@@ -427,17 +554,19 @@ export class EventUsersService {
         throw new NotFoundException(`User Event doesn't exists`);
       }
 
-      const findExistingOwner = await this.prisma.user_event_roles.findFirst({
-        where: {
-          event_id: findEventUser.event_id,
-          user_id: userId,
-          role: `OWNER`,
-        },
-      });
-      if (!findExistingOwner) {
-        throw new ConflictException(
-          `Sorry, only owner of event can remove this user role`,
-        );
+      if (userRole !== 'SUPERADMIN') {
+        const findExistingOwner = await this.prisma.user_event_roles.findFirst({
+          where: {
+            event_id: findEventUser.event_id,
+            user_id: userId,
+            role: `OWNER`,
+          },
+        });
+        if (!findExistingOwner) {
+          throw new ConflictException(
+            `Sorry, only owner of event can remove this user role`,
+          );
+        }
       }
 
       const removeEventUser = await this.prisma.user_event_roles.delete({

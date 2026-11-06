@@ -20,6 +20,7 @@ import {
 import LoadingState from "@/shared/components/ui/LoadingState";
 import { useConfirm } from "@/shared/components/ui/ConfirmDialog";
 import EmptyState from "@/shared/components/ui/EmptyState";
+import SearchBar from "@/shared/components/form/SearchBar";
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
   CASH: "Tunai",
@@ -306,7 +307,7 @@ export function TransactionsTab({ tenantId }: { tenantId: string }) {
         </div>
         <div className="min-w-[140px] flex-1">
           <label className="mb-1 block text-xs font-medium text-gray-500">Cari</label>
-          <input type="text" value={list.search} onChange={(e) => list.applySearch(e.target.value)} placeholder="Cari transaksi..." className="bg-white px-3 border border-gray-300 rounded-lg w-full h-9 text-sm" />
+          <SearchBar search={list.search} setSearch={list.applySearch} placeholder="Cari transaksi..." className="h-9 !rounded-lg" />
         </div>
         <div className="flex items-end">
           <SortMenu

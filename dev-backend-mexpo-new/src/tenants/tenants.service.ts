@@ -18,7 +18,7 @@ import { MailService } from '../mail/mail.service';
 import { QueryTenantDto } from './dto/query-tenant.dto';
 import { VerifyTenantDto } from './dto/verify-tenant.dto';
 import { UpdateTenantMemberDto } from './dto/update-tenant-member.dto';
-import { UserRole } from '@prisma/client';
+import { Prisma, UserRole } from '@prisma/client';
 import { assertEventFeature } from '../events/event-features';
 import { isUuid, uniqueSlug } from '../helper/slug';
 
@@ -630,34 +630,34 @@ export class TenantsService {
         );
       }
 
-      const { page, quantity, search } = query;
+      const { page, quantity, search, status } = query;
 
       const take = quantity || undefined;
       const skip = page && quantity ? (page - 1) * quantity : undefined;
 
-      const counts = await this.prisma.tenants.count({
-        where: {
-          event_id,
-          OR: [
-            { name: { contains: search ?? `` } },
-            { description: { contains: search ?? `` } },
-            { website: { contains: search ?? `` } },
-          ],
-        },
-      });
+      const searchFilter: Prisma.tenantsWhereInput = search?.trim()
+        ? {
+            OR: [
+              { name: { contains: search.trim() } },
+              { description: { contains: search.trim() } },
+              { website: { contains: search.trim() } },
+            ],
+          }
+        : {};
+
+      const where: Prisma.tenantsWhereInput = {
+        event_id,
+        status: status ?? undefined,
+        ...searchFilter,
+      };
+
+      const counts = await this.prisma.tenants.count({ where });
 
       const tenants = await this.prisma.tenants.findMany({
         take,
         skip,
         orderBy: { name: `asc` },
-        where: {
-          event_id,
-          OR: [
-            { name: { contains: search ?? `` } },
-            { description: { contains: search ?? `` } },
-            { website: { contains: search ?? `` } },
-          ],
-        },
+        where,
         include: {
           creator: { select: { full_name: true } },
           editor: { select: { full_name: true } },

@@ -10,6 +10,7 @@ import SortMenu from "@/shared/components/ui/SortMenu";
 import PageHeader from "@/shared/components/ui/PageHeader";
 import Badge from "@/shared/components/ui/Badge";
 import PageShell from "@/shared/components/ui/PageShell";
+import SearchBar from "@/shared/components/form/SearchBar";
 
 function toInputValue(d?: string): string {
   if (!d) return "";
@@ -57,12 +58,11 @@ export default function AttendancePage({ event }: { event: Event }) {
         </div>
         <div className="min-w-[160px] flex-1">
           <label className="mb-1 block text-xs font-medium text-gray-500">Cari nama</label>
-          <input
-            type="text"
-            value={list.search}
-            onChange={(e) => list.applySearch(e.target.value)}
-            placeholder="Nama pengunjung"
-            className="h-10 w-full rounded-lg border border-gray-300 px-3 text-sm"
+          <SearchBar
+            search={list.search}
+            setSearch={list.applySearch}
+            placeholder="Nama pengunjung..."
+            className="h-10 !rounded-lg"
           />
         </div>
         <div className="flex items-end">

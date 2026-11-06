@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { QueryKey } from "@tanstack/react-query";
 
 export interface ListResult<T> {
@@ -63,6 +63,7 @@ export function useList<T>(
       q.quantity = String(pageSize);
       return fetcher(q);
     },
+    placeholderData: keepPreviousData,
   });
 
   const items = query.data?.data ?? [];

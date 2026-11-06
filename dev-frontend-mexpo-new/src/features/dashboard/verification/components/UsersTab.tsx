@@ -122,6 +122,11 @@ export function UsersTab({ event }: Props) {
   };
 
 
+  const activeStatus = requests.filters.status;
+  const visibleRequests = activeStatus
+    ? requests.items.filter((u) => u.status === activeStatus)
+    : requests.items;
+
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -159,12 +164,12 @@ export function UsersTab({ event }: Props) {
       
       {requests.loading ? (
         <LoadingState type="skeleton-list" count={4} className="py-4" />
-      ) : requests.items.length === 0 ? (
+      ) : visibleRequests.length === 0 ? (
         <EmptyState title="Tidak ada permintaan." />
       ) : (
         <>
           <div className="space-y-3">
-            {requests.items.map((u) => (
+            {visibleRequests.map((u) => (
               <div key={u.uuid} className="flex items-center gap-3 bg-white px-4 py-3 border border-gray-100 rounded-xl transition-shadow hover:shadow-sm">
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-900 text-sm">{u.user?.full_name}</p>

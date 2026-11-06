@@ -42,6 +42,7 @@ export class EventUsersController {
       request.user.uuid,
       createEventUserDto,
       `VISITOR`,
+      request.user.role,
     );
   }
 
@@ -57,6 +58,7 @@ export class EventUsersController {
       request.user.uuid,
       createEventUserDto,
       `COMMITTEE`,
+      request.user.role,
     );
   }
 
@@ -72,6 +74,7 @@ export class EventUsersController {
       request.user.uuid,
       createEventUserDto,
       `TENANT`,
+      request.user.role,
     );
   }
 
@@ -123,7 +126,12 @@ export class EventUsersController {
     @Query() query: QueryEventUserDto,
     @Request() request: authType.AuthRequest,
   ) {
-    return this.eventUsersService.findAll(event_id, query, request.user.uuid);
+    return this.eventUsersService.findAll(
+      event_id,
+      query,
+      request.user.uuid,
+      request.user.role,
+    );
   }
 
   @Put(':id')
@@ -137,11 +145,16 @@ export class EventUsersController {
       id,
       updateEventUserDto,
       request.user.uuid,
+      request.user.role,
     );
   }
 
   @Delete(':id')
   remove(@Param('id') id: string, @Request() request: authType.AuthRequest) {
-    return this.eventUsersService.remove(id, request.user.uuid);
+    return this.eventUsersService.remove(
+      id,
+      request.user.uuid,
+      request.user.role,
+    );
   }
 }
