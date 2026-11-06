@@ -1027,14 +1027,16 @@ export class PublicApiService {
     }
   }
 
-  /** Retrieve live platform statistics (events, active users, check-in scans, modules) */
+  /** Retrieve live platform statistics (events, active users, check-in scans, modules, tenants) */
   async getStats() {
     try {
-      const [eventsCount, usersCount, checkInsCount] = await Promise.all([
-        this.prisma.events.count(),
-        this.prisma.users.count({ where: { is_active: true } }),
-        this.prisma.log_attendances.count(),
-      ]);
+      const [eventsCount, usersCount, checkInsCount, tenantsCount] =
+        await Promise.all([
+          this.prisma.events.count(),
+          this.prisma.users.count({ where: { is_active: true } }),
+          this.prisma.log_attendances.count(),
+          this.prisma.tenants.count({ where: { status: 'APPROVED' } }),
+        ]);
 
       const modulesCount = 15;
 
@@ -1045,6 +1047,7 @@ export class PublicApiService {
           events: eventsCount,
           users: usersCount,
           checkIns: checkInsCount,
+          tenants: tenantsCount,
           modules: modulesCount,
         },
       };

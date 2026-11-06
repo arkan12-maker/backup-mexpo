@@ -109,6 +109,7 @@ export interface PlatformStats {
   users: number;
   checkIns: number;
   modules: number;
+  tenants?: number;
 }
 
 export async function getPlatformStats() {

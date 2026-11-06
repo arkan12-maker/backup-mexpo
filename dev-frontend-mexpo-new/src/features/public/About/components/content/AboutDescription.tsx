@@ -20,6 +20,16 @@ const DEFAULT_PARAGRAPHS = [
   "Dengan fitur lengkap dan pengalaman pengguna yang intuitif, Mexpo menghubungkan penyelenggara dengan peserta, membuka peluang kolaborasi, dan mendorong pertumbuhan industri event di tanah air.",
 ];
 
+function formatCount(val: number): string {
+  if (val >= 1000000) {
+    return `${(val / 1000000).toFixed(val % 1000000 === 0 ? 0 : 1)}M+`;
+  }
+  if (val >= 1000) {
+    return `${(val / 1000).toFixed(val % 1000 === 0 ? 0 : 1)}K+`;
+  }
+  return `${val}+`;
+}
+
 const AboutDescription: React.FC<AboutDescriptionProps> = ({ data }) => {
   const { data: statsResponse } = useQuery({
     queryKey: keys.platform.stats,
@@ -35,10 +45,10 @@ const AboutDescription: React.FC<AboutDescriptionProps> = ({ data }) => {
       ? data.paragraphs
       : DEFAULT_PARAGRAPHS;
 
-  // Stat numbers (use live dynamic if greater than 0, otherwise standard high showcase numbers)
-  const eventCount = Math.max(statsData?.events ?? 0, 100);
-  const participantCount = Math.max(statsData?.users ?? 0, 500);
-  const partnerCount = Math.max(statsData?.modules ?? 0, 1000);
+  // Real live numbers directly from API fetch
+  const eventCount = statsData?.events ?? 0;
+  const participantCount = statsData?.users ?? 0;
+  const partnerCount = statsData?.tenants ?? 0;
 
   return (
     <motion.section
@@ -51,10 +61,6 @@ const AboutDescription: React.FC<AboutDescriptionProps> = ({ data }) => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
         {/* ── Left Column: Story Text & Action ── */}
         <div className="lg:col-span-5 space-y-5 text-left">
-          <span className="inline-flex items-center gap-1.5 bg-blue-50 text-secondary border border-blue-100 px-4 py-1.5 rounded-full text-xs font-bold tracking-wide">
-            Tentang Mexpo
-          </span>
-
           <h2 className="font-public-sans font-extrabold text-2xl sm:text-3xl lg:text-4xl text-gray-900 leading-snug tracking-tight">
             {heading}
           </h2>
@@ -96,23 +102,29 @@ const AboutDescription: React.FC<AboutDescriptionProps> = ({ data }) => {
           </div>
         </div>
 
-        {/* ── Right Column: 3 Vertical Stat Cards ── */}
+        {/* ── Right Column: 3 Vertical Stat Cards (Real Fetched Stats) ── */}
         <div className="lg:col-span-3 flex flex-col gap-3.5">
-          {/* Stat 1 */}
+          {/* Stat 1: Event Terselenggara */}
           <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-blue-50 text-secondary flex items-center justify-center shrink-0">
               <Calendar className="w-6 h-6" />
             </div>
             <div>
               <div className="text-2xl font-extrabold text-gray-900 leading-tight">
-                <CountUp
-                  end={eventCount}
-                  duration={2}
-                  separator="."
-                  enableScrollSpy
-                  scrollSpyOnce
-                />
-                +
+                {eventCount < 1000 ? (
+                  <>
+                    <CountUp
+                      end={eventCount}
+                      duration={2}
+                      separator="."
+                      enableScrollSpy
+                      scrollSpyOnce
+                    />
+                    +
+                  </>
+                ) : (
+                  <span>{formatCount(eventCount)}</span>
+                )}
               </div>
               <p className="text-xs text-gray-500 font-medium mt-0.5">
                 Event Terselenggara
@@ -120,17 +132,26 @@ const AboutDescription: React.FC<AboutDescriptionProps> = ({ data }) => {
             </div>
           </div>
 
-          {/* Stat 2 */}
+          {/* Stat 2: Peserta Terdaftar */}
           <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-blue-50 text-secondary flex items-center justify-center shrink-0">
               <Users className="w-6 h-6" />
             </div>
             <div>
               <div className="text-2xl font-extrabold text-gray-900 leading-tight">
-                {participantCount >= 1000 ? (
-                  <span>{Math.round(participantCount / 1000)}K+</span>
+                {participantCount < 1000 ? (
+                  <>
+                    <CountUp
+                      end={participantCount}
+                      duration={2}
+                      separator="."
+                      enableScrollSpy
+                      scrollSpyOnce
+                    />
+                    +
+                  </>
                 ) : (
-                  <span>500K+</span>
+                  <span>{formatCount(participantCount)}</span>
                 )}
               </div>
               <p className="text-xs text-gray-500 font-medium mt-0.5">
@@ -139,17 +160,26 @@ const AboutDescription: React.FC<AboutDescriptionProps> = ({ data }) => {
             </div>
           </div>
 
-          {/* Stat 3 */}
+          {/* Stat 3: Mitra & Exhibitor */}
           <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-blue-50 text-secondary flex items-center justify-center shrink-0">
               <Store className="w-6 h-6" />
             </div>
             <div>
               <div className="text-2xl font-extrabold text-gray-900 leading-tight">
-                {partnerCount >= 1000 ? (
-                  <span>{Math.round(partnerCount / 1000)}K+</span>
+                {partnerCount < 1000 ? (
+                  <>
+                    <CountUp
+                      end={partnerCount}
+                      duration={2}
+                      separator="."
+                      enableScrollSpy
+                      scrollSpyOnce
+                    />
+                    +
+                  </>
                 ) : (
-                  <span>1K+</span>
+                  <span>{formatCount(partnerCount)}</span>
                 )}
               </div>
               <p className="text-xs text-gray-500 font-medium mt-0.5">
